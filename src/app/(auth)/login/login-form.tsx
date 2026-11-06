@@ -11,9 +11,9 @@ const ERRORS: Record<string, string> = {
   rate_limited: "Too many attempts. Please wait a few minutes.",
 };
 
-export function LoginForm({ next, error }: { next?: string; error?: string }) {
+export function LoginForm({ next, error, detail }: { next?: string; error?: string; detail?: string }) {
   const [state, action, pending] = useActionState(signInAction, undefined);
-  const message = state?.error ?? (error ? ERRORS[error] : undefined);
+  const message = state?.error ?? (error ? `${ERRORS[error] ?? "Sign-in failed."}${detail ? ` (${detail})` : ""}` : undefined);
   return (
     <div className="space-y-4">
       <form action={signInWithMicrosoftAction}>
