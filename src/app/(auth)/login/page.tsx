@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getStaffContext } from "@/lib/auth/session";
 import { LoginForm } from "./login-form";
@@ -15,8 +16,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <LanguageSwitcher className="mb-4 justify-end" />
+        <Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="mb-5 h-auto w-full" priority />
         <div className="mb-6 flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-accent-500 font-bold text-white">T23</span>
           <div>
             <h1 className="font-semibold text-slate-900">Reservation Hub</h1>
             <p className="text-xs text-muted">{t("Staff sign in")}</p>

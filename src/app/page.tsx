@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -16,7 +17,7 @@ export default async function Home() {
     <div className="min-h-dvh bg-gradient-to-b from-brand-50 to-white">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
         <div className="flex items-center gap-2 font-semibold text-brand-800">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-accent-500 text-sm font-bold text-white">T23</span>
+          <Image src="/turtle23-mark.png" width={256} height={256} alt="Turtle 23" className="size-10" />
           Turtle23 Restaurants
         </div>
         <Link href="/login" className="text-sm font-medium text-brand-700 hover:underline">Staff sign in</Link>

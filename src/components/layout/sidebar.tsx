@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -27,7 +28,7 @@ export function Sidebar({ items, open, onClose }: {
       >
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-accent-500 text-sm font-bold text-white">T23</span>
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white p-0.5"><Image src="/turtle23-mark.png" width={256} height={256} alt="Turtle 23" className="size-full object-contain" /></span>
             <span>Reservation Hub</span>
           </Link>
           <button className="rounded p-1 hover:bg-brand-800 lg:hidden" onClick={onClose} aria-label={t("Close menu")}>
@@ -54,7 +55,7 @@ export function Sidebar({ items, open, onClose }: {
             );
           })}
         </nav>
-        <div className="px-4 py-3 text-[11px] text-brand-300">Turtle23 Restaurant Group</div>
+        <div className="mx-3 mb-3 rounded-lg bg-white px-3 py-2"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-auto w-full" /></div>
       </aside>
     </>
   );

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { CalendarDays, Clock, Users, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -172,7 +173,7 @@ export function BookingWizard(p: Props) {
           <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : t.confirm}</Button>
         </form>
       )}
-      {!p.embed ? <p className="mt-6 text-center text-xs text-muted">Turtle23 Restaurant Group · T23 Reservation Hub</p> : null}
+      {!p.embed ? <div className="mt-8 flex flex-col items-center gap-1"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-5 w-auto opacity-80" /><p className="text-[11px] text-muted">T23 Reservation Hub</p></div> : null}
     </div>
   );
 }
