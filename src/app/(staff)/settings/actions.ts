@@ -7,6 +7,7 @@ import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { DomainError } from "@/lib/domain/reservation-service";
 import { hashSecret, randomSecret } from "@/lib/tokens";
 import { webhookSecret } from "@/lib/integrations/webhooks";
+import { parsePageAccess } from "@/components/layout/nav";
 
 const done = () => revalidatePath("/settings");
 
@@ -99,6 +100,21 @@ export async function retentionAction(months: number, dryRun: boolean): Promise<
     const { data, error } = await supabase.rpc("apply_retention", { p_months: m, p_dry_run: dryRun });
     if (error) throw new DomainError("forbidden", error.message);
     return ok(data as { customers: number; notification_logs: number; cutoff: string });
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function savePageAccessAction(raw: unknown): Promise<ActionResult<undefined>> {
+  try {
+    const ctx = await assertPermission("settings.manage");
+    const shape = z.object({ host: z.array(z.string()).max(20), viewer: z.array(z.string()).max(20) }).parse(raw);
+    const access = parsePageAccess(shape);
+    const supabase = await createClient();
+    const { error } = await supabase.from("organizations").update({ page_access: access }).eq("id", ctx.organizationId);
+    if (error) throw new DomainError("validation", error.message);
+    revalidatePath("/", "layout");
+    return ok(undefined);
   } catch (e) {
     return fail(e);
   }

@@ -1,10 +1,12 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { retryNotificationAction } from "./actions";
 
 export function RetryNotificationButton({ id }: { id: string }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
@@ -15,13 +17,13 @@ export function RetryNotificationButton({ id }: { id: string }) {
         start(async () => {
           const res = await retryNotificationAction(id);
           if (!res.ok) toast.error(res.error);
-          else if (res.data.status === "sent") toast.success("Sent");
+          else if (res.data.status === "sent") toast.success(t("Sent"));
           else toast.warning(`Result: ${res.data.status.replace("_", " ")}`);
           router.refresh();
         })
       }
     >
-      {pending ? "Retrying…" : "Retry"}
+      {pending ? t("Retrying…") : t("Retry")}
     </button>
   );
 }

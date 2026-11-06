@@ -14,7 +14,7 @@ import { BookingTypes } from "./booking-types";
 
 export default async function RestaurantDetail({ params }: { params: Promise<{ id: string }> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.view");
+  const ctx = await requireStaff("reservation.view", "restaurants");
   const { id } = await params;
   const supabase = await createClient();
   const [{ data: r }, { data: policy }, { data: hours }, { data: types }, { data: areas }, { data: tables }] = await Promise.all([
@@ -38,58 +38,58 @@ export default async function RestaurantDetail({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
-      <Link href="/restaurants" className="inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" /> Restaurants</Link>
+      <Link href="/restaurants" className="inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" />{" "}{t("Restaurants")}</Link>
       <PageHeader
         title={r.name}
         description={r.is_active ? t("Active branch") : t("Disabled branch")}
         actions={
           <>
-            <Button asChild variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>Tables & floor plan</Link></Button>
-            <Button asChild variant="outline"><a href={`/book/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink /> Booking page</a></Button>
+            <Button asChild variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>{t("Tables & floor plan")}</Link></Button>
+            <Button asChild variant="outline"><a href={`/book/${r.slug}`} target="_blank" rel="noreferrer"><ExternalLink />{" "}{t("Booking page")}</a></Button>
           </>
         }
       />
-      <Card><CardHeader><CardTitle>Details</CardTitle></CardHeader><CardContent><RestaurantForm restaurant={r} readOnly={!canManage} /></CardContent></Card>
+      <Card><CardHeader><CardTitle>{t("Details")}</CardTitle></CardHeader><CardContent><RestaurantForm restaurant={r} readOnly={!canManage} /></CardContent></Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <CardTitle>Zones, tables & seats</CardTitle>
-          <Button asChild size="sm" variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>Edit zones & tables</Link></Button>
+          <CardTitle>{t("Zones, tables & seats")}</CardTitle>
+          <Button asChild size="sm" variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>{t("Edit zones & tables")}</Link></Button>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p className="font-medium">{tableList.length} tables · {tableList.reduce((s, t) => s + t.max_capacity, 0)} seats in {zones.length} zone{zones.length === 1 ? "" : "s"}</p>
+          <p className="font-medium">{tableList.length} {t("tables")} · {tableList.reduce((s, tb) => s + tb.max_capacity, 0)} {t("seats")} · {zones.length} {t("zones")}</p>
           <div className="divide-y rounded-lg border">
             {zones.map((z) => (
               <div key={z.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-2">
                 <span className="w-40 font-medium">{z.name}</span>
-                <span className="text-muted">{z.tables} tables · {z.seats} seats</span>
+                <span className="text-muted">{z.tables} {t("tables")} · {z.seats} {t("seats")}</span>
                 <span className="text-xs text-muted">{z.labels.join(", ")}</span>
               </div>
             ))}
             {unzoned.length ? (
               <div className="flex flex-wrap items-baseline gap-x-3 px-3 py-2">
-                <span className="w-40 font-medium">No zone</span>
+                <span className="w-40 font-medium">{t("No zone")}</span>
                 <span className="text-muted">{unzoned.length} tables</span>
                 <span className="text-xs text-muted">{unzoned.map((t) => t.label).join(", ")}</span>
               </div>
             ) : null}
           </div>
-          <p className="text-xs text-muted">Add, rename or delete zones and tables, and set each table&apos;s name and seats, on the floor plan.</p>
+          <p className="text-xs text-muted">{t("Add, rename or delete zones and tables, and set each table's name and seats, on the floor plan.")}</p>
         </CardContent>
       </Card>
-      <Card><CardHeader><CardTitle>Booking rules</CardTitle></CardHeader><CardContent><PolicyForm restaurantId={r.id} policy={policy} readOnly={!canManage} /></CardContent></Card>
-      <Card><CardHeader><CardTitle>Opening hours</CardTitle></CardHeader><CardContent><HoursEditor restaurantId={r.id} initial={hours ?? []} readOnly={!canManage} /></CardContent></Card>
+      <Card><CardHeader><CardTitle>{t("Booking rules")}</CardTitle></CardHeader><CardContent><PolicyForm restaurantId={r.id} policy={policy} readOnly={!canManage} /></CardContent></Card>
+      <Card><CardHeader><CardTitle>{t("Opening hours")}</CardTitle></CardHeader><CardContent><HoursEditor restaurantId={r.id} initial={hours ?? []} readOnly={!canManage} /></CardContent></Card>
       <Card>
-        <CardHeader><CardTitle>Booking types & dining courses</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("Booking types & dining courses")}</CardTitle></CardHeader>
         <CardContent>
           <BookingTypes restaurantId={r.id} currency={r.currency} readOnly={!canManage} types={(types ?? []).map((t) => ({ ...t, name: t.name as Record<string, string>, price: t.price === null ? null : Number(t.price), deposit_override: t.deposit_override === null ? null : Number(t.deposit_override) }))} />
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Booking links & embed widget</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("Booking links & embed widget")}</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p>Direct link (use for Google Business Profile, Instagram, LINE OA): <code className="rounded bg-slate-100 px-1">{base}/book/{r.slug}</code></p>
-          <p>Language-specific: <code className="rounded bg-slate-100 px-1">?lang=th</code> · <code className="rounded bg-slate-100 px-1">?lang=fr</code></p>
-          <p>Embed on a website:</p>
+          <p>{t("Direct link (use for Google Business Profile, Instagram, LINE OA):")}{" "}<code className="rounded bg-slate-100 px-1">{base}/book/{r.slug}</code></p>
+          <p>{t("Language-specific:")}{" "}<code className="rounded bg-slate-100 px-1">?lang=th</code> · <code className="rounded bg-slate-100 px-1">?lang=fr</code></p>
+          <p>{t("Embed on a website:")}</p>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{embed}</pre>
         </CardContent>
       </Card>

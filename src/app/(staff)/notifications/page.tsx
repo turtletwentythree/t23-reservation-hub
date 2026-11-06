@@ -16,7 +16,7 @@ export const metadata = { title: "Notifications" };
 
 export default async function NotificationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("notification.view");
+  const ctx = await requireStaff("notification.view", "notifications");
   const sp = await searchParams;
   const status = pickParam(sp.status) ?? "";
   const supabase = await createClient();
@@ -41,25 +41,25 @@ export default async function NotificationsPage({ searchParams }: { searchParams
           <Card key={p.channel} className="p-3">
             <p className="text-xs uppercase text-muted">{p.channel}</p>
             <p className="font-medium">{p.name}</p>
-            <Badge tone={p.isConfigured() ? "green" : "slate"} className="mt-1">{p.isConfigured() ? "Configured" : "Not configured"}</Badge>
+            <Badge tone={p.isConfigured() ? "green" : "slate"} className="mt-1">{p.isConfigured() ? t("Configured") : t("Not configured")}</Badge>
           </Card>
         ))}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Delivery log</CardTitle>
+          <CardTitle>{t("Delivery log")}</CardTitle>
           <form className="flex gap-2">
             <Select name="status" defaultValue={status} className="h-8 w-40">
-              <option value="">All statuses</option>
+              <option value="">{t("All statuses")}</option>
               {["queued", "sending", "sent", "failed", "not_configured"].map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
             </Select>
-            <Button size="sm" variant="outline">Filter</Button>
+            <Button size="sm" variant="outline">{t("Filter")}</Button>
           </form>
         </CardHeader>
         <CardContent>
           <DataTable>
-            <thead><tr><Th>Time</Th><Th>Event</Th><Th>Channel</Th><Th>Recipient</Th><Th>Status</Th><Th>Attempts</Th><Th></Th></tr></thead>
+            <thead><tr><Th>{t("Time")}</Th><Th>{t("Event")}</Th><Th>{t("Channel")}</Th><Th>{t("Recipient")}</Th><Th>{t("Status")}</Th><Th>{t("Attempts")}</Th><Th></Th></tr></thead>
             <tbody>
               {(logs ?? []).map((l) => (
                 <tr key={l.id}>
@@ -75,7 +75,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                   <Td>{l.status === "failed" || l.status === "not_configured" ? <RetryNotificationButton id={l.id} /> : null}</Td>
                 </tr>
               ))}
-              {(logs ?? []).length === 0 ? <tr><Td colSpan={7} className="py-8 text-center text-muted">No notifications yet.</Td></tr> : null}
+              {(logs ?? []).length === 0 ? <tr><Td colSpan={7} className="py-8 text-center text-muted">{t("No notifications yet.")}</Td></tr> : null}
             </tbody>
           </DataTable>
         </CardContent>
@@ -83,30 +83,30 @@ export default async function NotificationsPage({ searchParams }: { searchParams
 
       <Card>
         <CardHeader>
-          <CardTitle>Templates</CardTitle>
+          <CardTitle>{t("Templates")}</CardTitle>
           {canEdit ? (
             <Dialog>
-              <DialogTrigger asChild><Button size="sm">New template</Button></DialogTrigger>
-              <DialogContent title="New template"><TemplateEditor /></DialogContent>
+              <DialogTrigger asChild><Button size="sm">{t("New template")}</Button></DialogTrigger>
+              <DialogContent title={t("New template")}><TemplateEditor /></DialogContent>
             </Dialog>
           ) : null}
         </CardHeader>
         <CardContent>
           <DataTable>
-            <thead><tr><Th>Event</Th><Th>Channel</Th><Th>Lang</Th><Th>Scope</Th><Th>Preview</Th><Th></Th></tr></thead>
+            <thead><tr><Th>{t("Event")}</Th><Th>{t("Channel")}</Th><Th>{t("Lang")}</Th><Th>{t("Scope")}</Th><Th>{t("Preview")}</Th><Th></Th></tr></thead>
             <tbody>
-              {(templates ?? []).map((t) => (
-                <tr key={t.id}>
-                  <Td>{t.event.replace(/_/g, " ")} {t.is_active ? null : <Badge>inactive</Badge>}</Td>
-                  <Td>{t.channel}</Td>
-                  <Td>{t.locale}</Td>
-                  <Td className="text-xs">{t.restaurant_id ? "Restaurant" : "Group default"}</Td>
-                  <Td className="max-w-md truncate text-xs text-muted">{t.subject ?? t.body.slice(0, 90)}</Td>
+              {(templates ?? []).map((tpl) => (
+                <tr key={tpl.id}>
+                  <Td>{tpl.event.replace(/_/g, " ")} {tpl.is_active ? null : <Badge>{t("inactive")}</Badge>}</Td>
+                  <Td>{tpl.channel}</Td>
+                  <Td>{tpl.locale}</Td>
+                  <Td className="text-xs">{tpl.restaurant_id ? t("Restaurant") : t("Group default")}</Td>
+                  <Td className="max-w-md truncate text-xs text-muted">{tpl.subject ?? tpl.body.slice(0, 90)}</Td>
                   <Td>
                     {canEdit ? (
                       <Dialog>
-                        <DialogTrigger asChild><button className="text-xs font-medium text-brand-700 hover:underline">Edit</button></DialogTrigger>
-                        <DialogContent title="Edit template"><TemplateEditor template={t} /></DialogContent>
+                        <DialogTrigger asChild><button className="text-xs font-medium text-brand-700 hover:underline">{t("Edit")}</button></DialogTrigger>
+                        <DialogContent title={t("Edit template")}><TemplateEditor template={tpl} /></DialogContent>
                       </Dialog>
                     ) : null}
                   </Td>

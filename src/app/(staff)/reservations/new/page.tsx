@@ -11,10 +11,10 @@ export const metadata = { title: "New reservation" };
 
 export default async function NewReservationPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.write");
+  const ctx = await requireStaff("reservation.write", "reservations");
   const sp = await searchParams;
   const data = await getReservationFormData(ctx);
-  if (data.restaurants.length === 0) return <EmptyState title="No active restaurant selected" description="Choose a branch you can book for." />;
+  if (data.restaurants.length === 0) return <EmptyState title={t("No active restaurant selected")} description={t("Choose a branch you can book for.")} />;
   const walkIn = pickParam(sp.walkin) === "1";
   const customerId = pickParam(sp.customer);
   const { data: customer } = customerId

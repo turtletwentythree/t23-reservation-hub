@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
   initial: ReservationFormValues;
   onDone?: (id: string) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const isEdit = Boolean(initial.id);
   const [v, setV] = useState<ReservationFormValues>(initial);
@@ -119,7 +121,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
         toast.error(res.error);
         return;
       }
-      toast.success(isEdit ? "Reservation updated" : `Reservation ${"reference" in res.data ? res.data.reference : ""} created`);
+      toast.success(isEdit ? t("Reservation updated") : `Reservation ${"reference" in res.data ? res.data.reference : ""} created`);
       if (onDone) onDone(res.data.id);
       else router.push(`/reservations/${res.data.id}`);
       router.refresh();
@@ -129,24 +131,24 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
   return (
     <form onSubmit={submit} className="space-y-5">
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Field label="Restaurant" className="col-span-2">
+        <Field label={t("Restaurant")} className="col-span-2">
           <Select value={v.restaurant_id} disabled={isEdit} onChange={(e) => setV((p) => ({ ...p, restaurant_id: e.target.value, table_ids: [], booking_type_id: "" }))} required>
             {restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </Select>
         </Field>
-        <Field label="Date">
+        <Field label={t("Date")}>
           <Input type="date" value={v.reservation_date} onChange={(e) => set("reservation_date", e.target.value)} required />
         </Field>
-        <Field label="Guests">
+        <Field label={t("Guests")}>
           <Input type="number" min={1} max={200} value={v.party_size} onChange={(e) => set("party_size", Number(e.target.value))} required />
         </Field>
       </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-medium text-slate-700">Time {loadingSlots ? <span className="text-muted">· checking availability…</span> : null}</p>
+          <p className="text-xs font-medium text-slate-700">{t("Time")} {loadingSlots ? <span className="text-muted">{t("· checking availability…")}</span> : null}</p>
           <div className="flex items-center gap-2">
-            <Input type="time" step={300} value={v.reservation_time} onChange={(e) => set("reservation_time", e.target.value)} className="h-8 w-28" aria-label="Custom time" required />
+            <Input type="time" step={300} value={v.reservation_time} onChange={(e) => set("reservation_time", e.target.value)} className="h-8 w-28" aria-label={t("Custom time")} required />
           </div>
         </div>
         {slotError ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{slotError} Staff can still enter a custom time.</p> : null}
@@ -157,7 +159,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
                 type="button"
                 key={s.time}
                 onClick={() => pickSlot(s)}
-                title={s.available ? `Best: ${s.options[0]?.labels.join("+")}` : "No table free — can still be booked unassigned"}
+                title={s.available ? `Best: ${s.options[0]?.labels.join("+")}` : t("No table free — can still be booked unassigned")}
                 className={cn(
                   "rounded-lg border px-2.5 py-1 text-sm tabular-nums transition",
                   v.reservation_time === s.time
@@ -177,10 +179,10 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
       <section className="rounded-xl border bg-slate-50/60 p-3">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-medium text-slate-700">
-            Tables {v.table_ids.length ? `· ${assignedCapacity} seats for ${v.party_size} guests` : "· none assigned"}
+            {t("Tables")} {v.table_ids.length ? `· ${assignedCapacity} ${t("seats")} · ${v.party_size} ${t("guests")}` : `· ${t("none assigned")}`}
           </p>
           <label className="flex items-center gap-1.5 text-xs">
-            <input type="checkbox" checked={manualTables} onChange={(e) => setManualTables(e.target.checked)} /> Choose manually
+            <input type="checkbox" checked={manualTables} onChange={(e) => setManualTables(e.target.checked)} />{" "}{t("Choose manually")}
           </label>
         </div>
         {!manualTables ? (
@@ -200,7 +202,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
                 </button>
               ))
             ) : (
-              <p className="text-sm text-muted">{v.reservation_time ? "No free table fits at this time. The booking will be saved unassigned." : "Pick a time to see table options."}</p>
+              <p className="text-sm text-muted">{v.reservation_time ? t("No free table fits at this time. The booking will be saved unassigned.") : t("Pick a time to see table options.")}</p>
             )}
           </div>
         ) : (
@@ -222,8 +224,8 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
         )}
         {v.table_ids.length > 0 && assignedCapacity < v.party_size ? (
           <label className="mt-2 flex items-center gap-2 text-xs text-amber-800">
-            <AlertTriangle className="size-3.5" /> Party exceeds table capacity.
-            <input type="checkbox" checked={allowOver} onChange={(e) => setAllowOver(e.target.checked)} /> Override
+            <AlertTriangle className="size-3.5" />{" "}{t("Party exceeds table capacity.")}
+            <input type="checkbox" checked={allowOver} onChange={(e) => setAllowOver(e.target.checked)} />{" "}{t("Override")}
           </label>
         ) : null}
       </section>
@@ -231,10 +233,10 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
       <section className="space-y-3">
         {!isEdit ? (
           <div className="relative">
-            <Field label="Find existing guest (phone or name)">
+            <Field label={t("Find existing guest (phone or name)")}>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" />
-                <Input className="pl-8" value={custQuery} onChange={(e) => setCustQuery(e.target.value)} placeholder="081… or name" />
+                <Input className="pl-8" value={custQuery} onChange={(e) => setCustQuery(e.target.value)} placeholder={t("081… or name")} />
               </div>
             </Field>
             {custResults?.ok && custResults.data.length > 0 ? (
@@ -262,80 +264,80 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
           </div>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Guest name">
+          <Field label={t("Guest name")}>
             <Input value={v.customer_name} onChange={(e) => set("customer_name", e.target.value)} required maxLength={120} />
           </Field>
-          <Field label="Phone">
+          <Field label={t("Phone")}>
             <Input value={v.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" />
           </Field>
-          <Field label="Email">
+          <Field label={t("Email")}>
             <Input type="email" value={v.email} onChange={(e) => set("email", e.target.value)} />
           </Field>
         </div>
-        {v.customer_id ? <p className="text-xs text-brand-700">Linked to existing guest profile.</p> : null}
+        {v.customer_id ? <p className="text-xs text-brand-700">{t("Linked to existing guest profile.")}</p> : null}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <Field label="Source">
+        <Field label={t("Source")}>
           <Select value={v.booking_source_id} onChange={(e) => set("booking_source_id", e.target.value)}>
             <option value="">—</option>
             {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
         </Field>
-        <Field label="Booking type">
+        <Field label={t("Booking type")}>
           <Select value={v.booking_type_id} onChange={(e) => set("booking_type_id", e.target.value)}>
             <option value="">—</option>
             {restaurantTypes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </Select>
         </Field>
-        <Field label="Language">
+        <Field label={t("Language")}>
           <Select value={v.language} onChange={(e) => set("language", e.target.value as "en")}>
-            <option value="en">English</option>
+            <option value="en">{t("English")}</option>
             <option value="th">ไทย</option>
-            <option value="fr">Français</option>
+            <option value="fr">{t("Français")}</option>
           </Select>
         </Field>
         {!isEdit ? (
-          <Field label="Status">
+          <Field label={t("Status")}>
             <Select value={v.status} onChange={(e) => set("status", e.target.value as "confirmed")}>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="arrived">Arrived</option>
-              <option value="seated">Seated</option>
+              <option value="confirmed">{t("Confirmed")}</option>
+              <option value="pending">{t("Pending")}</option>
+              <option value="arrived">{t("Arrived")}</option>
+              <option value="seated">{t("Seated")}</option>
             </Select>
           </Field>
         ) : (
-          <Field label="Deposit (THB)">
+          <Field label={t("Deposit (THB)")}>
             <Input type="number" min={0} step="0.01" value={v.deposit_amount} onChange={(e) => set("deposit_amount", Number(e.target.value))} />
           </Field>
         )}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Field label="Special occasion">
-          <Input value={v.special_occasion} onChange={(e) => set("special_occasion", e.target.value)} placeholder="Birthday, anniversary…" />
+        <Field label={t("Special occasion")}>
+          <Input value={v.special_occasion} onChange={(e) => set("special_occasion", e.target.value)} placeholder={t("Birthday, anniversary…")} />
         </Field>
-        <Field label="Dietary requirements">
+        <Field label={t("Dietary requirements")}>
           <Input value={v.dietary_requirements} onChange={(e) => set("dietary_requirements", e.target.value)} />
         </Field>
-        <Field label="Allergies">
+        <Field label={t("Allergies")}>
           <Input value={v.allergies} onChange={(e) => set("allergies", e.target.value)} className={v.allergies ? "border-amber-400" : ""} />
         </Field>
-        <Field label="Guest notes" className="sm:col-span-3">
+        <Field label={t("Guest notes")} className="sm:col-span-3">
           <Textarea rows={2} value={v.guest_notes} onChange={(e) => set("guest_notes", e.target.value)} />
         </Field>
-        <Field label="Internal notes (staff only)" className="sm:col-span-3">
+        <Field label={t("Internal notes (staff only)")} className="sm:col-span-3">
           <Textarea rows={2} value={v.internal_notes} onChange={(e) => set("internal_notes", e.target.value)} />
         </Field>
         {!isEdit ? (
-          <Field label="Deposit amount (THB)">
+          <Field label={t("Deposit amount (THB)")}>
             <Input type="number" min={0} step="0.01" value={v.deposit_amount} onChange={(e) => set("deposit_amount", Number(e.target.value))} />
           </Field>
         ) : null}
       </section>
 
       <div className="flex justify-end gap-2 border-t pt-4">
-        <Button type="submit" disabled={saving}>{saving ? "Saving…" : isEdit ? "Save changes" : "Create reservation"}</Button>
+        <Button type="submit" disabled={saving}>{saving ? t("Saving…") : isEdit ? t("Save changes") : t("Create reservation")}</Button>
       </div>
     </form>
   );

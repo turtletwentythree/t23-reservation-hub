@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { anonymizeCustomerAction, createTagAction, recordConsentAction, setCustomerTagsAction } from "../actions";
 
 export function TagPicker({ customerId, tags, assigned, canEdit }: { customerId: string; tags: { id: string; name: string; color: string }[]; assigned: string[]; canEdit: boolean }) {
+  const t = useT();
   const [sel, setSel] = useState(assigned);
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -27,9 +29,9 @@ export function TagPicker({ customerId, tags, assigned, canEdit }: { customerId:
       </div>
       {canEdit ? (
         <form className="flex gap-1" action={(fd) => start(async () => { const r = await createTagAction(String(fd.get("name")), String(fd.get("color"))); if (r.ok) router.refresh(); else toast.error(r.error); })}>
-          <Input name="name" placeholder="New tag" className="h-8" required />
-          <input type="color" name="color" defaultValue="#2f7d4f" className="h-8 w-10 rounded border" aria-label="Tag colour" />
-          <Button size="sm" variant="outline">Add</Button>
+          <Input name="name" placeholder={t("New tag")} className="h-8" required />
+          <input type="color" name="color" defaultValue="#2f7d4f" className="h-8 w-10 rounded border" aria-label={t("Tag colour")} />
+          <Button size="sm" variant="outline">{t("Add")}</Button>
         </form>
       ) : null}
     </div>
@@ -45,6 +47,7 @@ const CONSENTS: [string, string][] = [
 ];
 
 export function ConsentPanel({ customerId, current, canEdit }: { customerId: string; current: Record<string, boolean>; canEdit: boolean }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
@@ -53,7 +56,7 @@ export function ConsentPanel({ customerId, current, canEdit }: { customerId: str
         <li key={k} className="flex items-center justify-between gap-2">
           <span>{label}</span>
           <label className="flex items-center gap-1 text-xs">
-            <input type="checkbox" disabled={!canEdit || pending} checked={current[k] ?? false} onChange={(e) => start(async () => { const r = await recordConsentAction(customerId, k, e.target.checked); if (r.ok) { toast.success("Consent recorded"); router.refresh(); } else toast.error(r.error); })} />
+            <input type="checkbox" disabled={!canEdit || pending} checked={current[k] ?? false} onChange={(e) => start(async () => { const r = await recordConsentAction(customerId, k, e.target.checked); if (r.ok) { toast.success(t("Consent recorded")); router.refresh(); } else toast.error(r.error); })} />
             {current[k] === undefined ? "not asked" : current[k] ? "granted" : "withdrawn"}
           </label>
         </li>
@@ -63,16 +66,17 @@ export function ConsentPanel({ customerId, current, canEdit }: { customerId: str
 }
 
 export function PrivacyPanel({ customerId }: { customerId: string }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
     <div className="space-y-2 text-sm">
-      <p className="text-muted">Erases name, contact details, notes and allergy data from this profile and all of its reservations and messages. Anonymous booking counts stay for reporting. This cannot be undone.</p>
+      <p className="text-muted">{t("Erases name, contact details, notes and allergy data from this profile and all of its reservations and messages. Anonymous booking counts stay for reporting. This cannot be undone.")}</p>
       <Button variant="destructive" size="sm" disabled={pending} onClick={() => {
-        const note = window.prompt("Type the request reference or reason to confirm erasure");
+        const note = window.prompt(t("Type the request reference or reason to confirm erasure"));
         if (!note) return;
-        start(async () => { const r = await anonymizeCustomerAction(customerId, note); if (r.ok) { toast.success("Guest anonymized"); router.refresh(); } else toast.error(r.error); });
-      }}>Erase personal data</Button>
+        start(async () => { const r = await anonymizeCustomerAction(customerId, note); if (r.ok) { toast.success(t("Guest anonymized")); router.refresh(); } else toast.error(r.error); });
+      }}>{t("Erase personal data")}</Button>
     </div>
   );
 }

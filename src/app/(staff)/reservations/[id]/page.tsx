@@ -1,3 +1,4 @@
+import { getStaffT } from "@/lib/i18n/staff-server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -19,7 +20,8 @@ import { ReservationForm } from "../reservation-form";
 import { RetryNotificationButton } from "@/app/(staff)/notifications/retry-button";
 
 export default async function ReservationDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ edit?: string }> }) {
-  const ctx = await requireStaff("reservation.view");
+  const { t } = await getStaffT();
+  const ctx = await requireStaff("reservation.view", "reservations");
   const { id } = await params;
   const { edit } = await searchParams;
   const supabase = await createClient();
@@ -45,8 +47,8 @@ export default async function ReservationDetail({ params, searchParams }: { para
     const formData = await getReservationFormData({ ...ctx, branchIds: [r.restaurant_id] });
     return (
       <div className="mx-auto max-w-3xl">
-        <Link href={`/reservations/${id}`} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" /> Back</Link>
-        <h1 className="mb-4 text-xl font-semibold">Edit {r.reference}</h1>
+        <Link href={`/reservations/${id}`} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" />{" "}{t("Back")}</Link>
+        <h1 className="mb-4 text-xl font-semibold">{t("Edit")} {r.reference}</h1>
         <Card className="p-4 sm:p-6">
           <ReservationForm
             {...formData}
@@ -85,7 +87,7 @@ export default async function ReservationDetail({ params, searchParams }: { para
     ["Restaurant", r.restaurants?.name],
     ["Date & time", `${r.reservation_date} · ${r.reservation_time.slice(0, 5)} (${r.duration_minutes} min)`],
     ["Guests", r.party_size],
-    ["Tables", r.reservation_tables.length ? r.reservation_tables.map((t) => `${t.tables?.label} (${t.tables?.max_capacity})`).join(" + ") : <span className="text-amber-700">Unassigned</span>],
+    ["Tables", r.reservation_tables.length ? r.reservation_tables.map((t) => `${t.tables?.label} (${t.tables?.max_capacity})`).join(" + ") : <span className="text-amber-700">{t("Unassigned")}</span>],
     ["Source", r.booking_sources?.name ?? "—"],
     ["Booking type", (r.booking_types?.name as Record<string, string> | undefined)?.en ?? "—"],
     ["Phone", r.phone ?? "—"],
@@ -102,20 +104,20 @@ export default async function ReservationDetail({ params, searchParams }: { para
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link href="/reservations" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" /> Reservations</Link>
+      <Link href="/reservations" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" />{" "}{t("Reservations")}</Link>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold">{r.customers?.is_vip ? "★ " : ""}{r.customer_name}</h1>
             <StatusBadge status={r.status} />
-            {r.is_walk_in ? <Badge tone="orange">Walk-in</Badge> : null}
+            {r.is_walk_in ? <Badge tone="orange">{t("Walk-in")}</Badge> : null}
           </div>
           <p className="font-mono text-sm text-muted">{r.reference}</p>
         </div>
         {canWrite ? (
           <div className="flex flex-wrap items-center gap-2">
             <StatusActions id={r.id} status={r.status} canDelete={roleCan(ctx.role, "reservation.delete")} />
-            <Button asChild size="sm" variant="outline"><Link href={`/reservations/${id}?edit=1`}><Pencil /> Edit</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link href={`/reservations/${id}?edit=1`}><Pencil />{" "}{t("Edit")}</Link></Button>
           </div>
         ) : null}
       </div>
@@ -137,14 +139,14 @@ export default async function ReservationDetail({ params, searchParams }: { para
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>History</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("History")}</CardTitle></CardHeader>
             <CardContent>
               <ol className="space-y-3 border-l pl-4">
                 {(history ?? []).map((h) => (
                   <li key={h.id} className="relative text-sm">
                     <span className="absolute -left-[21px] top-1.5 size-2.5 rounded-full bg-brand-400" />
                     <p className="font-medium">
-                      {h.change_type === "created" ? "Created" : h.change_type === "status_changed" ? `Status: ${STATUS_META[h.from_status!]?.label} → ${STATUS_META[h.to_status!]?.label}` : h.change_type === "tables_changed" ? "Tables changed" : "Updated"}
+                      {h.change_type === "created" ? t("Created") : h.change_type === "status_changed" ? `Status: ${STATUS_META[h.from_status!]?.label} → ${STATUS_META[h.to_status!]?.label}` : h.change_type === "tables_changed" ? t("Tables changed") : t("Updated")}
                     </p>
                     <p className="text-xs text-muted">
                       {new Date(h.created_at).toLocaleString("en-GB", { timeZone: r.restaurants?.timezone })} · {h.changed_by ? actorName.get(h.changed_by) ?? "staff" : h.actor_label ?? "system"}
@@ -163,9 +165,9 @@ export default async function ReservationDetail({ params, searchParams }: { para
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Notifications</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("Notifications")}</CardTitle></CardHeader>
             <CardContent>
-              {(logs ?? []).length === 0 ? <p className="text-sm text-muted">No notifications for this booking.</p> : (
+              {(logs ?? []).length === 0 ? <p className="text-sm text-muted">{t("No notifications for this booking.")}</p> : (
                 <ul className="divide-y text-sm">
                   {(logs ?? []).map((l) => (
                     <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -186,16 +188,16 @@ export default async function ReservationDetail({ params, searchParams }: { para
         <div className="space-y-4">
           {r.customers ? (
             <Card>
-              <CardHeader><CardTitle>Guest profile</CardTitle><Link className="text-xs font-medium text-brand-600 hover:underline" href={`/customers/${r.customers.id}`}>Open</Link></CardHeader>
+              <CardHeader><CardTitle>{t("Guest profile")}</CardTitle><Link className="text-xs font-medium text-brand-600 hover:underline" href={`/customers/${r.customers.id}`}>{t("Open")}</Link></CardHeader>
               <CardContent className="space-y-1 text-sm">
-                <p>{r.customers.total_visits} visits · {r.customers.total_no_shows} no-shows</p>
+                <p>{r.customers.total_visits} {t("visits")} · {r.customers.total_no_shows} {t("no-shows")}</p>
                 {r.customers.allergies ? <p className="text-amber-700">⚠ {r.customers.allergies}</p> : null}
                 {r.customers.internal_notes ? <p className="text-muted">{r.customers.internal_notes}</p> : null}
               </CardContent>
             </Card>
           ) : null}
           <Card>
-            <CardHeader><CardTitle>Payment & deposit</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("Payment & deposit")}</CardTitle></CardHeader>
             <CardContent>
               <PaymentPanel
                 reservationId={r.id}
@@ -209,11 +211,11 @@ export default async function ReservationDetail({ params, searchParams }: { para
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Guest confirmation</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("Guest confirmation")}</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-center">
               <QrCode value={link} />
               <p className="break-all text-left text-xs text-muted">{link}</p>
-              <p className="text-left text-xs text-muted">Share with the guest to view, modify or cancel within policy.</p>
+              <p className="text-left text-xs text-muted">{t("Share with the guest to view, modify or cancel within policy.")}</p>
             </CardContent>
           </Card>
         </div>

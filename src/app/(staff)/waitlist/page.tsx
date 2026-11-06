@@ -15,10 +15,10 @@ export const metadata = { title: "Waitlist" };
 
 export default async function WaitlistPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.view");
+  const ctx = await requireStaff("reservation.view", "waitlist");
   const sp = await searchParams;
   const restaurantId = [pickParam(sp.restaurant), ctx.selectedBranch].find((x) => x && x !== "all" && ctx.restaurants.some((r) => r.id === x)) ?? ctx.restaurants[0]?.id;
-  if (!restaurantId) return <EmptyState title="No restaurant access" />;
+  if (!restaurantId) return <EmptyState title={t("No restaurant access")} />;
   const restaurant = ctx.restaurants.find((r) => r.id === restaurantId)!;
   const date = pickParam(sp.date) ?? todayIn(restaurant.timezone);
   const supabase = await createClient();
@@ -55,7 +55,7 @@ export default async function WaitlistPage({ searchParams }: { searchParams: Pro
               <Select name="restaurant" defaultValue={restaurantId} className="w-44">{ctx.restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</Select>
             ) : null}
             <Input type="date" name="date" defaultValue={date} className="w-40" />
-            <Button variant="outline">Show</Button>
+            <Button variant="outline">{t("Show")}</Button>
           </form>
         }
       />
@@ -66,10 +66,10 @@ export default async function WaitlistPage({ searchParams }: { searchParams: Pro
         entries={active.map((e) => ({ ...e, estimate: estimates.get(e.id) ?? null }))}
       />
       <Card>
-        <CardHeader><CardTitle>Queue history · {date}</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("Queue history")} · {date}</CardTitle></CardHeader>
         <CardContent>
           <DataTable>
-            <thead><tr><Th>#</Th><Th>Guest</Th><Th>Party</Th><Th>Joined</Th><Th>Outcome</Th><Th>Waited</Th></tr></thead>
+            <thead><tr><Th>#</Th><Th>{t("Guest")}</Th><Th>{t("Party")}</Th><Th>{t("Joined")}</Th><Th>{t("Outcome")}</Th><Th>{t("Waited")}</Th></tr></thead>
             <tbody>
               {history.map((h) => {
                 const endAt = h.seated_at ?? h.left_at;
@@ -84,7 +84,7 @@ export default async function WaitlistPage({ searchParams }: { searchParams: Pro
                   </tr>
                 );
               })}
-              {history.length === 0 ? <tr><Td colSpan={6} className="py-6 text-center text-muted">No completed queue entries.</Td></tr> : null}
+              {history.length === 0 ? <tr><Td colSpan={6} className="py-6 text-center text-muted">{t("No completed queue entries.")}</Td></tr> : null}
             </tbody>
           </DataTable>
         </CardContent>

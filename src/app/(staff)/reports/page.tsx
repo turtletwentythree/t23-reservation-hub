@@ -15,7 +15,7 @@ export const metadata = { title: "Reports" };
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("report.view");
+  const ctx = await requireStaff("report.view", "reports");
   const sp = await searchParams;
   const today = todayIn();
   const preset = pickParam(sp.preset) ?? (pickParam(sp.from) ? "custom" : "month");
@@ -35,8 +35,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         description={`${from} → ${to} · ${ctx.selectedBranch === "all" ? t("all branches") : ctx.restaurants.find((x) => x.id === ctx.selectedBranch)?.name} · ${t("calculated from")} ${r.rowCount} ${t("reservation records")}`}
         actions={
           <>
-            <Button asChild variant="outline"><a href={`/api/export/report?${qs}&format=csv`}><Download /> CSV</a></Button>
-            <Button asChild variant="outline"><a href={`/api/export/report?${qs}&format=xlsx`}><Download /> Excel</a></Button>
+            <Button asChild variant="outline"><a href={`/api/export/report?${qs}&format=csv`}><Download />{" "}{t("CSV")}</a></Button>
+            <Button asChild variant="outline"><a href={`/api/export/report?${qs}&format=xlsx`}><Download />{" "}{t("Excel")}</a></Button>
           </>
         }
       />
@@ -48,29 +48,29 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <input type="hidden" name="preset" value="custom" />
           <Input type="date" name="from" defaultValue={from} className="w-40" />
           <Input type="date" name="to" defaultValue={to} className="w-40" />
-          <Button variant="outline" size="sm">Apply</Button>
+          <Button variant="outline" size="sm">{t("Apply")}</Button>
         </form>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
-        <StatCard label="Total reservations" value={s.totalReservations} hint="all statuses" />
-        <StatCard label="Total covers" value={s.covers} tone="accent" hint="excl. cancelled/no-show" />
-        <StatCard label="Occupancy rate" value={`${s.occupancyRate}%`} hint="booked seat-min ÷ open seat-min" />
-        <StatCard label="Avg party size" value={s.avgPartySize} tone="slate" />
-        <StatCard label="Cancellation rate" value={`${s.cancellationRate}%`} tone="red" hint={`${s.cancelled} cancelled`} />
-        <StatCard label="No-show rate" value={`${s.noShowRate}%`} tone="red" hint={`${s.noShows} of non-cancelled`} />
-        <StatCard label="Repeat guest rate" value={`${s.repeatCustomerRate}%`} hint={`${s.uniqueGuests} guests; repeat = 2+ visits`} />
-        <StatCard label="Recorded payments" value={formatMoney(r.payments.net)} tone="slate" hint="deposits/fees net of refunds" />
-        <StatCard label="POS revenue" value="—" tone="slate" hint="Pending FoodStory integration — not estimated" />
+        <StatCard label={t("Total reservations")} value={s.totalReservations} hint={t("all statuses")} />
+        <StatCard label={t("Total covers")} value={s.covers} tone="accent" hint={t("excl. cancelled/no-show")} />
+        <StatCard label={t("Occupancy rate")} value={`${s.occupancyRate}%`} hint={t("booked seat-min ÷ open seat-min")} />
+        <StatCard label={t("Avg party size")} value={s.avgPartySize} tone="slate" />
+        <StatCard label={t("Cancellation rate")} value={`${s.cancellationRate}%`} tone="red" hint={`${s.cancelled} cancelled`} />
+        <StatCard label={t("No-show rate")} value={`${s.noShowRate}%`} tone="red" hint={`${s.noShows} of non-cancelled`} />
+        <StatCard label={t("Repeat guest rate")} value={`${s.repeatCustomerRate}%`} hint={`${s.uniqueGuests} guests; repeat = 2+ visits`} />
+        <StatCard label={t("Recorded payments")} value={formatMoney(r.payments.net)} tone="slate" hint={t("deposits/fees net of refunds")} />
+        <StatCard label={t("POS revenue")} value="—" tone="slate" hint={t("Pending FoodStory integration — not estimated")} />
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        <Card><CardHeader><CardTitle>Daily trend</CardTitle></CardHeader><CardContent><TrendChart data={r.trend} /></CardContent></Card>
-        <Card><CardHeader><CardTitle>Peak booking hours</CardTitle></CardHeader><CardContent><PeakChart data={r.peaks} /></CardContent></Card>
+        <Card><CardHeader><CardTitle>{t("Daily trend")}</CardTitle></CardHeader><CardContent><TrendChart data={r.trend} /></CardContent></Card>
+        <Card><CardHeader><CardTitle>{t("Peak booking hours")}</CardTitle></CardHeader><CardContent><PeakChart data={r.peaks} /></CardContent></Card>
       </div>
       <Card>
-        <CardHeader><CardTitle>Branch performance</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("Branch performance")}</CardTitle></CardHeader>
         <CardContent>
           <DataTable>
-            <thead><tr><Th>Restaurant</Th><Th>Reservations</Th><Th>Covers</Th><Th>Occupancy</Th><Th>Avg party</Th><Th>Cancel %</Th><Th>No-show %</Th><Th>Repeat %</Th></tr></thead>
+            <thead><tr><Th>{t("Restaurant")}</Th><Th>{t("Reservations")}</Th><Th>{t("Covers")}</Th><Th>{t("Occupancy")}</Th><Th>{t("Avg party")}</Th><Th>{t("Cancel %")}</Th><Th>{t("No-show %")}</Th><Th>{t("Repeat %")}</Th></tr></thead>
             <tbody>{r.branches.map((b) => (
               <tr key={b.restaurant}><Td className="font-medium">{b.restaurant}</Td><Td>{b.totalReservations}</Td><Td>{b.covers}</Td><Td>{b.occupancyRate}%</Td><Td>{b.avgPartySize}</Td><Td>{b.cancellationRate}%</Td><Td>{b.noShowRate}%</Td><Td>{b.repeatCustomerRate}%</Td></tr>
             ))}</tbody>
@@ -78,10 +78,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Booking source performance</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t("Booking source performance")}</CardTitle></CardHeader>
         <CardContent>
           <DataTable>
-            <thead><tr><Th>Source</Th><Th>Reservations</Th><Th>Covers</Th><Th>Cancel %</Th><Th>No-show %</Th></tr></thead>
+            <thead><tr><Th>{t("Source")}</Th><Th>{t("Reservations")}</Th><Th>{t("Covers")}</Th><Th>{t("Cancel %")}</Th><Th>{t("No-show %")}</Th></tr></thead>
             <tbody>{r.sources.map((x) => <tr key={x.source}><Td className="font-medium">{x.source}</Td><Td>{x.reservations}</Td><Td>{x.covers}</Td><Td>{x.cancellationRate}%</Td><Td>{x.noShowRate}%</Td></tr>)}</tbody>
           </DataTable>
         </CardContent>

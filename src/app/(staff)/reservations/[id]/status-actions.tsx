@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { setStatusAction, deleteReservationAction } from "../actions";
 const PRIMARY: ReservationStatus[] = ["confirmed", "arrived", "seated", "completed"];
 
 export function StatusActions({ id, status, canDelete }: { id: string; status: ReservationStatus; canDelete: boolean }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   const next = STATUS_TRANSITIONS[status];
@@ -18,14 +20,14 @@ export function StatusActions({ id, status, canDelete }: { id: string; status: R
     start(async () => {
       let reason: string | undefined;
       if (to === "cancelled") {
-        const r = window.prompt("Cancellation reason (optional)");
+        const r = window.prompt(t("Cancellation reason (optional)"));
         if (r === null) return;
         reason = r;
       }
-      if (to === "no_show" && !window.confirm("Mark this reservation as a no-show?")) return;
+      if (to === "no_show" && !window.confirm(t("Mark this reservation as a no-show?"))) return;
       const res = await setStatusAction(id, to, reason);
       if (res.ok) {
-        toast.success(`Marked ${STATUS_META[to].label}`);
+        toast.success(`Marked ${t(STATUS_META[to].label)}`);
         router.refresh();
       } else toast.error(res.error);
     });
@@ -41,7 +43,7 @@ export function StatusActions({ id, status, canDelete }: { id: string; status: R
           className={s === "cancelled" || s === "no_show" ? "text-red-700" : ""}
           onClick={() => run(s)}
         >
-          {s === "arrived" ? "Check in (arrived)" : STATUS_META[s].label}
+          {s === "arrived" ? t("Check in (arrived)") : t(STATUS_META[s].label)}
         </Button>
       ))}
       {canDelete ? (
@@ -52,14 +54,14 @@ export function StatusActions({ id, status, canDelete }: { id: string; status: R
           disabled={pending}
           onClick={() =>
             start(async () => {
-              if (!window.confirm("Permanently delete this reservation? Prefer cancelling — deletion removes its history.")) return;
+              if (!window.confirm(t("Permanently delete this reservation? Prefer cancelling — deletion removes its history."))) return;
               const res = await deleteReservationAction(id);
               if (res.ok) router.push("/reservations");
               else toast.error(res.error);
             })
           }
         >
-          Delete
+          {t("Delete")}
         </Button>
       ) : null}
     </div>

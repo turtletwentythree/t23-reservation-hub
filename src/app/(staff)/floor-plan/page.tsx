@@ -16,10 +16,10 @@ export const metadata = { title: "Floor plan" };
 
 export default async function FloorPlanPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.view");
+  const ctx = await requireStaff("reservation.view", "floor-plan");
   const sp = await searchParams;
   const restaurantId = [pickParam(sp.restaurant), ctx.selectedBranch].find((x) => x && x !== "all" && ctx.restaurants.some((r) => r.id === x)) ?? ctx.restaurants[0]?.id;
-  if (!restaurantId) return <EmptyState title="No restaurant access" />;
+  if (!restaurantId) return <EmptyState title={t("No restaurant access")} />;
   const restaurant = ctx.restaurants.find((r) => r.id === restaurantId)!;
   const tz = restaurant.timezone ?? DEFAULT_TZ;
   const date = pickParam(sp.date) ?? todayIn(tz);
@@ -57,17 +57,17 @@ export default async function FloorPlanPage({ searchParams }: { searchParams: Pr
             <Input type="date" name="date" defaultValue={date} className="w-40" />
             <Input type="time" name="time" defaultValue={time} className="w-28" />
             {editMode ? <input type="hidden" name="edit" value="1" /> : null}
-            <Button type="submit" variant="outline">Show</Button>
+            <Button type="submit" variant="outline">{t("Show")}</Button>
             {roleCan(ctx.role, "table.layout") ? (
               <Button asChild variant={editMode ? "default" : "outline"}>
-                <Link href={`/floor-plan?restaurant=${restaurantId}&date=${date}&time=${time}${editMode ? "" : "&edit=1"}`}>{editMode ? "Done editing" : "Edit layout"}</Link>
+                <Link href={`/floor-plan?restaurant=${restaurantId}&date=${date}&time=${time}${editMode ? "" : "&edit=1"}`}>{editMode ? t("Done editing") : t("Edit layout")}</Link>
               </Button>
             ) : null}
           </form>
         }
       />
       {(areas ?? []).length === 0 ? (
-        <EmptyState title="No dining areas yet" description="Add an area in the layout editor to start placing tables." />
+        <EmptyState title={t("No dining areas yet")} description={t("Add an area in the layout editor to start placing tables.")} />
       ) : (
         <FloorPlan
           key={(tables ?? []).map((t) => t.id + t.updated_at).join() + (areas ?? []).length}

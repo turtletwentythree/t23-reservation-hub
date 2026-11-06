@@ -20,7 +20,7 @@ const SORTS = { time: "starts_at", created: "created_at", party: "party_size", n
 
 export default async function ReservationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.view");
+  const ctx = await requireStaff("reservation.view", "reservations");
   const sp = await searchParams;
   const from = pickParam(sp.from) ?? pickParam(sp.date) ?? todayIn();
   const to = pickParam(sp.to) ?? pickParam(sp.date) ?? addDays(from, 6);
@@ -68,44 +68,44 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
         description={`${count ?? 0} ${t("reservations")} · ${from} → ${to}`}
         actions={
           <>
-            <Button asChild variant="outline"><a href={`/api/export/reservations?${params}`}><Download /> CSV</a></Button>
+            <Button asChild variant="outline"><a href={`/api/export/reservations?${params}`}><Download />{" "}{t("CSV")}</a></Button>
             {roleCan(ctx.role, "reservation.write") ? (
-              <Button asChild><Link href="/reservations/new"><Plus /> New reservation</Link></Button>
+              <Button asChild><Link href="/reservations/new"><Plus />{" "}{t("New reservation")}</Link></Button>
             ) : null}
           </>
         }
       />
       <form className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        <Input name="q" defaultValue={q} placeholder="Name, phone, reference…" className="col-span-2" />
-        <Input type="date" name="from" defaultValue={from} aria-label="From" />
-        <Input type="date" name="to" defaultValue={to} aria-label="To" />
-        <Select name="status" defaultValue={status} aria-label="Status">
-          <option value="">All statuses</option>
-          {RESERVATION_STATUSES.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+        <Input name="q" defaultValue={q} placeholder={t("Name, phone, reference…")} className="col-span-2" />
+        <Input type="date" name="from" defaultValue={from} aria-label={t("From")} />
+        <Input type="date" name="to" defaultValue={to} aria-label={t("To")} />
+        <Select name="status" defaultValue={status} aria-label={t("Status")}>
+          <option value="">{t("All statuses")}</option>
+          {RESERVATION_STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_META[s].label)}</option>)}
         </Select>
         <div className="flex gap-2">
-          <Select name="source" defaultValue={source} aria-label="Source">
-            <option value="">All sources</option>
+          <Select name="source" defaultValue={source} aria-label={t("Source")}>
+            <option value="">{t("All sources")}</option>
             {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
-          <Button type="submit" variant="outline">Filter</Button>
+          <Button type="submit" variant="outline">{t("Filter")}</Button>
         </div>
       </form>
 
       {(data ?? []).length === 0 ? (
-        <EmptyState title="No reservations match" description="Try a different date range or clear filters." />
+        <EmptyState title={t("No reservations match")} description={t("Try a different date range or clear filters.")} />
       ) : (
         <DataTable>
           <thead>
             <tr>
-              <Th><Link href={sortLink("time")}>Date / time</Link></Th>
-              <Th><Link href={sortLink("name")}>Guest</Link></Th>
-              <Th><Link href={sortLink("party")}>Pax</Link></Th>
-              {ctx.branchIds.length > 1 ? <Th>Restaurant</Th> : null}
-              <Th>Table</Th>
-              <Th>Source</Th>
-              <Th>Status</Th>
-              <Th>Ref</Th>
+              <Th><Link href={sortLink("time")}>{t("Date / time")}</Link></Th>
+              <Th><Link href={sortLink("name")}>{t("Guest")}</Link></Th>
+              <Th><Link href={sortLink("party")}>{t("Pax")}</Link></Th>
+              {ctx.branchIds.length > 1 ? <Th>{t("Restaurant")}</Th> : null}
+              <Th>{t("Table")}</Th>
+              <Th>{t("Source")}</Th>
+              <Th>{t("Status")}</Th>
+              <Th>{t("Ref")}</Th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +128,7 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
                 </Td>
                 <Td className="tabular-nums">{r.party_size}</Td>
                 {ctx.branchIds.length > 1 ? <Td className="whitespace-nowrap">{names.get(r.restaurant_id)}</Td> : null}
-                <Td>{r.reservation_tables?.map((t) => t.tables?.label).join("+") || <span className="text-xs text-amber-700">Unassigned</span>}</Td>
+                <Td>{r.reservation_tables?.map((t) => t.tables?.label).join("+") || <span className="text-xs text-amber-700">{t("Unassigned")}</span>}</Td>
                 <Td className="whitespace-nowrap text-xs">{sourceNames.get(r.booking_source_id ?? "") ?? "—"}</Td>
                 <Td><StatusBadge status={r.status} /></Td>
                 <Td className="font-mono text-xs">{r.reference}</Td>
@@ -139,9 +139,9 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
       )}
       {pages > 1 ? (
         <div className="mt-3 flex items-center justify-end gap-2 text-sm">
-          {page > 1 ? <Link className="rounded border bg-white px-3 py-1" href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}`}>Previous</Link> : null}
-          <span className="text-muted">Page {page} of {pages}</span>
-          {page < pages ? <Link className="rounded border bg-white px-3 py-1" href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}`}>Next</Link> : null}
+          {page > 1 ? <Link className="rounded border bg-white px-3 py-1" href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}`}>{t("Previous")}</Link> : null}
+          <span className="text-muted">{t("Page")} {page} of {pages}</span>
+          {page < pages ? <Link className="rounded border bg-white px-3 py-1" href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}`}>{t("Next")}</Link> : null}
         </div>
       ) : null}
     </div>

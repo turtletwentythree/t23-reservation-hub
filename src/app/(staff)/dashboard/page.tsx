@@ -15,7 +15,7 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const ctx = await requireStaff("dashboard.view");
+  const ctx = await requireStaff("dashboard.view", "dashboard");
   const sp = await searchParams;
   const { t } = await getStaffT();
   const date = pickParam(sp.date) ?? todayIn();

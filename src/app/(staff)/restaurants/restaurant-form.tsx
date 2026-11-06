@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { createRestaurantAction, updateRestaurantAction } from "./actions";
 type R = { id?: string; name: string; slug: string; cuisine: string | null; description: string | null; address: string | null; phone: string | null; email: string | null; timezone: string; currency: string; is_active: boolean; accepts_online_bookings: boolean };
 
 export function RestaurantForm({ restaurant, readOnly }: { restaurant?: R; readOnly?: boolean }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
@@ -19,25 +21,25 @@ export function RestaurantForm({ restaurant, readOnly }: { restaurant?: R; readO
           const data = Object.fromEntries(fd);
           const res = restaurant?.id ? await updateRestaurantAction(restaurant.id, data) : await createRestaurantAction(data);
           if (!res.ok) return void toast.error(res.error);
-          toast.success(restaurant?.id ? "Restaurant saved" : "Restaurant created");
+          toast.success(restaurant?.id ? t("Restaurant saved") : t("Restaurant created"));
           if (!restaurant?.id) router.push(`/restaurants/${res.data.id}`);
           router.refresh();
         })
       }
     >
       <fieldset disabled={readOnly || pending} className="contents">
-        <Field label="Name"><Input name="name" defaultValue={restaurant?.name} required /></Field>
-        <Field label="URL slug" hint="Booking page: /book/slug"><Input name="slug" defaultValue={restaurant?.slug} required pattern="[a-z0-9-]{2,60}" /></Field>
-        <Field label="Cuisine"><Input name="cuisine" defaultValue={restaurant?.cuisine ?? ""} /></Field>
-        <Field label="Phone"><Input name="phone" defaultValue={restaurant?.phone ?? ""} /></Field>
-        <Field label="Email"><Input name="email" type="email" defaultValue={restaurant?.email ?? ""} /></Field>
-        <Field label="Address"><Input name="address" defaultValue={restaurant?.address ?? ""} /></Field>
-        <Field label="Time zone"><Input name="timezone" defaultValue={restaurant?.timezone ?? "Asia/Bangkok"} required /></Field>
-        <Field label="Currency"><Input name="currency" defaultValue={restaurant?.currency ?? "THB"} maxLength={3} required /></Field>
-        <Field label="Description" className="sm:col-span-2"><Textarea name="description" rows={2} defaultValue={restaurant?.description ?? ""} /></Field>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={restaurant?.is_active ?? true} /> Active (uncheck to disable the branch)</label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="accepts_online_bookings" defaultChecked={restaurant?.accepts_online_bookings ?? true} /> Accept online bookings</label>
-        {!readOnly ? <div className="sm:col-span-2"><Button type="submit">{pending ? "Saving…" : restaurant?.id ? "Save" : "Create restaurant"}</Button></div> : null}
+        <Field label={t("Name")}><Input name="name" defaultValue={restaurant?.name} required /></Field>
+        <Field label={t("URL slug")} hint={t("Booking page: /book/slug")}><Input name="slug" defaultValue={restaurant?.slug} required pattern="[a-z0-9-]{2,60}" /></Field>
+        <Field label={t("Cuisine")}><Input name="cuisine" defaultValue={restaurant?.cuisine ?? ""} /></Field>
+        <Field label={t("Phone")}><Input name="phone" defaultValue={restaurant?.phone ?? ""} /></Field>
+        <Field label={t("Email")}><Input name="email" type="email" defaultValue={restaurant?.email ?? ""} /></Field>
+        <Field label={t("Address")}><Input name="address" defaultValue={restaurant?.address ?? ""} /></Field>
+        <Field label={t("Time zone")}><Input name="timezone" defaultValue={restaurant?.timezone ?? "Asia/Bangkok"} required /></Field>
+        <Field label={t("Currency")}><Input name="currency" defaultValue={restaurant?.currency ?? "THB"} maxLength={3} required /></Field>
+        <Field label={t("Description")} className="sm:col-span-2"><Textarea name="description" rows={2} defaultValue={restaurant?.description ?? ""} /></Field>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={restaurant?.is_active ?? true} />{" "}{t("Active (uncheck to disable the branch)")}</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="accepts_online_bookings" defaultChecked={restaurant?.accepts_online_bookings ?? true} />{" "}{t("Accept online bookings")}</label>
+        {!readOnly ? <div className="sm:col-span-2"><Button type="submit">{pending ? t("Saving…") : restaurant?.id ? t("Save") : t("Create restaurant")}</Button></div> : null}
       </fieldset>
     </form>
   );

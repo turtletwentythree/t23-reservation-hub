@@ -15,7 +15,7 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("reservation.view");
+  const ctx = await requireStaff("reservation.view", "calendar");
   const sp = await searchParams;
   const view = (pickParam(sp.view) ?? "month") as "month" | "week" | "day";
   const today = todayIn();
@@ -74,9 +74,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 <Link key={v} href={link(v, anchor)} className={cn("rounded-md px-3 py-1 text-sm capitalize", view === v ? "bg-brand-500 text-white" : "text-slate-600")}>{v}</Link>
               ))}
             </div>
-            <Button asChild variant="outline" size="icon"><Link href={link(view, prev)} aria-label="Previous"><ChevronLeft /></Link></Button>
-            <Button asChild variant="outline"><Link href={link(view, today)}>Today</Link></Button>
-            <Button asChild variant="outline" size="icon"><Link href={link(view, next)} aria-label="Next"><ChevronRight /></Link></Button>
+            <Button asChild variant="outline" size="icon"><Link href={link(view, prev)} aria-label={t("Previous")}><ChevronLeft /></Link></Button>
+            <Button asChild variant="outline"><Link href={link(view, today)}>{t("Today")}</Link></Button>
+            <Button asChild variant="outline" size="icon"><Link href={link(view, next)} aria-label={t("Next")}><ChevronRight /></Link></Button>
           </div>
         }
       />
@@ -124,7 +124,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   );
 }
 
-function DayTimeline({ rows, names, multi }: { rows: { id: string; restaurant_id: string; reservation_time: string; customer_name: string; party_size: number; status: keyof typeof STATUS_META; duration_minutes: number; reservation_tables: { tables: { label: string } | null }[] }[]; names: Map<string, string>; multi: boolean }) {
+async function DayTimeline({ rows, names, multi }: { rows: { id: string; restaurant_id: string; reservation_time: string; customer_name: string; party_size: number; status: keyof typeof STATUS_META; duration_minutes: number; reservation_tables: { tables: { label: string } | null }[] }[]; names: Map<string, string>; multi: boolean }) {
+  const { t } = await getStaffT();
   const startH = 10, endH = 24, span = (endH - startH) * 60;
   const lanes = new Map<string, typeof rows>();
   for (const r of rows) {
@@ -136,13 +137,13 @@ function DayTimeline({ rows, names, multi }: { rows: { id: string; restaurant_id
     <div className="overflow-x-auto rounded-xl border bg-white">
       <div className="min-w-[900px]">
         <div className="flex border-b text-xs text-muted">
-          <div className="w-40 shrink-0 px-2 py-1">Table</div>
+          <div className="w-40 shrink-0 px-2 py-1">{t("Table")}</div>
           <div className="relative flex-1">
             {Array.from({ length: endH - startH }, (_, i) => <span key={i} className="absolute top-1" style={{ left: `${(i * 60 / span) * 100}%` }}>{startH + i}:00</span>)}
             &nbsp;
           </div>
         </div>
-        {sorted.length === 0 ? <p className="p-6 text-center text-sm text-muted">No bookings this day.</p> : null}
+        {sorted.length === 0 ? <p className="p-6 text-center text-sm text-muted">{t("No bookings this day.")}</p> : null}
         {sorted.map(([lane, list]) => (
           <div key={lane} className="flex border-b">
             <div className="w-40 shrink-0 truncate px-2 py-2 text-xs font-medium">{lane}</div>

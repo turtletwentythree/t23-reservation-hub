@@ -12,7 +12,7 @@ const ENTITIES = ["reservations", "customers", "customer_consents", "restaurants
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  await requireStaff("audit.view");
+  await requireStaff("audit.view", "audit-logs");
   const sp = await searchParams;
   const entity = pickParam(sp.entity) ?? "";
   const action = pickParam(sp.action) ?? "";
@@ -29,13 +29,13 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     <div>
       <PageHeader title={t("Audit logs")} description={t("Every create, update and delete on key records — written by database triggers, not the app.")} />
       <form className="mb-4 flex flex-wrap gap-2">
-        <Select name="entity" defaultValue={entity} className="w-56"><option value="">All records</option>{ENTITIES.map((e) => <option key={e} value={e}>{e}</option>)}</Select>
-        <Select name="action" defaultValue={action} className="w-40"><option value="">All actions</option>{["insert", "update", "delete", "merge", "grant_access", "revoke_access"].map((a) => <option key={a}>{a}</option>)}</Select>
+        <Select name="entity" defaultValue={entity} className="w-56"><option value="">{t("All records")}</option>{ENTITIES.map((e) => <option key={e} value={e}>{e}</option>)}</Select>
+        <Select name="action" defaultValue={action} className="w-40"><option value="">{t("All actions")}</option>{["insert", "update", "delete", "merge", "grant_access", "revoke_access"].map((a) => <option key={a}>{a}</option>)}</Select>
         <Input type="date" name="date" defaultValue={date} className="w-40" />
-        <Button variant="outline">Filter</Button>
+        <Button variant="outline">{t("Filter")}</Button>
       </form>
       <DataTable>
-        <thead><tr><Th>Time</Th><Th>Actor</Th><Th>Action</Th><Th>Record</Th><Th>Branch</Th><Th>Changes</Th></tr></thead>
+        <thead><tr><Th>{t("Time")}</Th><Th>{t("Actor")}</Th><Th>{t("Action")}</Th><Th>{t("Record")}</Th><Th>{t("Branch")}</Th><Th>{t("Changes")}</Th></tr></thead>
         <tbody>
           {(data ?? []).map((l) => (
             <tr key={l.id}>

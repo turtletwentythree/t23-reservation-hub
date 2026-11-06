@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireStaff();
   const { locale, t } = await getStaffT();
-  const items = NAV_ITEMS.filter((i) => roleCan(ctx.role, i.permission)).map(({ href, label, icon }) => ({ href, label: t(label), icon }));
+  const items = NAV_ITEMS.filter((i) => roleCan(ctx.role, i.permission) && ctx.pages.includes(i.key)).map(({ href, label, icon }) => ({ href, label: t(label), icon }));
   return (
     <AppShell
       locale={locale}

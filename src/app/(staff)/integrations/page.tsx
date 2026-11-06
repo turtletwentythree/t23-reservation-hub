@@ -29,7 +29,7 @@ const ENV_HINT: Record<string, string> = {
 
 export default async function IntegrationsPage() {
   const { t } = await getStaffT();
-  await requireStaff("integration.view");
+  await requireStaff("integration.view", "integrations");
   const supabase = await createClient();
   const { data } = await supabase.from("integrations").select("*").order("category");
   return (
@@ -50,8 +50,8 @@ export default async function IntegrationsPage() {
           );
         })}
         <Card className="p-4">
-          <div className="flex items-start justify-between"><p className="font-semibold">REST API & webhooks</p><Badge tone="green">Available</Badge></div>
-          <p className="mt-2 text-sm text-slate-600">External channels can check availability and create/cancel bookings with scoped API keys. Manage keys and webhooks in Settings.</p>
+          <div className="flex items-start justify-between"><p className="font-semibold">{t("REST API & webhooks")}</p><Badge tone="green">{t("Available")}</Badge></div>
+          <p className="mt-2 text-sm text-slate-600">{t("External channels can check availability and create/cancel bookings with scoped API keys. Manage keys and webhooks in Settings.")}</p>
         </Card>
       </div>
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
   editMode: boolean;
   date: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [areaId, setAreaId] = useState(areas[0]?.id ?? "");
@@ -97,7 +99,7 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, msg: string) =>
     start(async () => {
       const res = await fn();
-      if (res.ok) { toast.success(msg); router.refresh(); } else toast.error(res.error ?? "Failed");
+      if (res.ok) { toast.success(msg); router.refresh(); } else toast.error(res.error ?? t("Failed"));
     });
 
   return (
@@ -111,34 +113,34 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
           ))}
           {editMode && canLayout ? (
             <>
-              <Button size="sm" variant="outline" onClick={() => { const n = window.prompt("New zone name (e.g. Main Dining, Terrace, Private room)"); if (n) run(() => createAreaAction(restaurantId, n), "Zone added"); }}><Plus /> Zone</Button>
+              <Button size="sm" variant="outline" onClick={() => { const n = window.prompt(t("New zone name (e.g. Main Dining, Terrace, Private room)")); if (n) run(() => createAreaAction(restaurantId, n), t("Zone added")); }}><Plus />{" "}{t("Zone")}</Button>
               {area ? (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => { const n = window.prompt("Rename zone", area.name); if (n && n !== area.name) run(() => renameAreaAction(restaurantId, area.id, n), "Zone renamed"); }}>Rename zone</Button>
-                  <Button size="sm" variant="ghost" className="text-red-600" onClick={() => { if (window.confirm(`Delete zone "${area.name}"? It must have no tables.`)) run(() => deleteAreaAction(restaurantId, area.id), "Zone deleted"); }}>Delete zone</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { const n = window.prompt(t("Rename zone"), area.name); if (n && n !== area.name) run(() => renameAreaAction(restaurantId, area.id, n), t("Zone renamed")); }}>{t("Rename zone")}</Button>
+                  <Button size="sm" variant="ghost" className="text-red-600" onClick={() => { if (window.confirm(`Delete zone "${area.name}"? It must have no tables.`)) run(() => deleteAreaAction(restaurantId, area.id), t("Zone deleted")); }}>{t("Delete zone")}</Button>
                 </>
               ) : null}
             </>
           ) : null}
           <div className="ml-auto flex flex-wrap gap-1 text-xs">
-            {(Object.keys(LIVE) as LiveStatus[]).map((s) => <span key={s} className={cn("rounded border px-1.5 py-0.5", LIVE[s].cls)}>{LIVE[s].label} {counts[s] ?? 0}</span>)}
+            {(Object.keys(LIVE) as LiveStatus[]).map((s) => <span key={s} className={cn("rounded border px-1.5 py-0.5", LIVE[s].cls)}>{t(LIVE[s].label)} {counts[s] ?? 0}</span>)}
           </div>
         </div>
         {editMode ? (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-accent-200 bg-accent-50 p-2 text-sm">
-            <span className="font-medium text-accent-700">Layout editor</span>
-            <span className="text-xs text-accent-700">Drag tables to move. Shift-click to select tables to combine.</span>
+            <span className="font-medium text-accent-700">{t("Layout editor")}</span>
+            <span className="text-xs text-accent-700">{t("Drag tables to move. Shift-click to select tables to combine.")}</span>
             <div className="ml-auto flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setEditTable({ shape: "rect", min_capacity: 1, max_capacity: 4, area_id: areaId, is_combinable: true, is_online_bookable: true, is_active: true })}><Plus /> Table</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditTable({ shape: "rect", min_capacity: 1, max_capacity: 4, area_id: areaId, is_combinable: true, is_online_bookable: true, is_active: true })}><Plus />{" "}{t("Table")}</Button>
               <Button size="sm" variant="outline" disabled={multi.length < 2} onClick={() => {
                 const ts = tables.filter((t) => multi.includes(t.id));
-                const name = window.prompt("Combination name", ts.map((t) => t.label).join("+"));
+                const name = window.prompt(t("Combination name"), ts.map((t) => t.label).join("+"));
                 if (!name) return;
                 const max = ts.reduce((a, t) => a + t.max_capacity, 0);
-                run(() => saveCombinationAction(restaurantId, { name, table_ids: multi, min_capacity: Math.max(...ts.map((t) => t.max_capacity)) + 1, max_capacity: max }), "Tables combined");
+                run(() => saveCombinationAction(restaurantId, { name, table_ids: multi, min_capacity: Math.max(...ts.map((t) => t.max_capacity)) + 1, max_capacity: max }), t("Tables combined"));
                 setMulti([]);
-              }}><Combine /> Combine ({multi.length})</Button>
-              <Button size="sm" disabled={!dirty || pending} onClick={() => run(async () => { const r = await saveLayoutAction(restaurantId, visible.map(({ id, pos_x, pos_y, width, height, rotation }) => ({ id, pos_x, pos_y, width, height, rotation }))); if (r.ok) setDirty(false); return r; }, "Layout saved")}><Save /> Save layout</Button>
+              }}><Combine /> {t("Combine")} ({multi.length})</Button>
+              <Button size="sm" disabled={!dirty || pending} onClick={() => run(async () => { const r = await saveLayoutAction(restaurantId, visible.map(({ id, pos_x, pos_y, width, height, rotation }) => ({ id, pos_x, pos_y, width, height, rotation }))); if (r.ok) setDirty(false); return r; }, "Layout saved")}><Save />{" "}{t("Save layout")}</Button>
             </div>
           </div>
         ) : null}
@@ -173,11 +175,11 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
         </div>
         {combinations.length ? (
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="text-muted">Combinations:</span>
+            <span className="text-muted">{t("Combinations:")}</span>
             {combinations.map((c) => (
               <Badge key={c.id} tone="blue">
                 {c.name} ({c.min_capacity}-{c.max_capacity})
-                {editMode ? <button onClick={() => run(() => deleteCombinationAction(restaurantId, c.id), "Combination removed (tables separated)")} aria-label="Separate"><Trash2 className="size-3" /></button> : null}
+                {editMode ? <button onClick={() => run(() => deleteCombinationAction(restaurantId, c.id), t("Combination removed (tables separated)"))} aria-label={t("Separate")}><Trash2 className="size-3" /></button> : null}
               </Badge>
             ))}
           </div>
@@ -188,35 +190,35 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
         {sel ? (
           <Card className="p-4">
             <div className="flex items-center justify-between">
-              <p className="font-semibold">Table {sel.label} <span className="text-sm font-normal text-muted">· {sel.min_capacity}-{sel.max_capacity} seats</span></p>
-              <Badge>{LIVE[statusOf(sel).s].label}</Badge>
+              <p className="font-semibold">{t("Table")} {sel.label} <span className="text-sm font-normal text-muted">· {sel.min_capacity}-{sel.max_capacity} seats</span></p>
+              <Badge>{t(LIVE[statusOf(sel).s].label)}</Badge>
             </div>
             {canOperate ? (
               <div className="mt-2 flex flex-wrap gap-1">
                 {(["available", "cleaning", "out_of_service"] as const).map((s) => (
-                  <Button key={s} size="sm" variant={sel.service_status === s ? "default" : "outline"} disabled={pending} onClick={() => run(() => setTableStatusAction(sel.id, s), `Table ${LIVE[s].label.toLowerCase()}`)}>
-                    {LIVE[s].label}
+                  <Button key={s} size="sm" variant={sel.service_status === s ? "default" : "outline"} disabled={pending} onClick={() => run(() => setTableStatusAction(sel.id, s), `Table ${t(LIVE[s].label).toLowerCase()}`)}>
+                    {t(LIVE[s].label)}
                   </Button>
                 ))}
-                <Button size="sm" variant="accent" asChild><Link href={`/reservations/new?restaurant=${restaurantId}&table=${sel.id}&walkin=1`}>Seat walk-in</Link></Button>
+                <Button size="sm" variant="accent" asChild><Link href={`/reservations/new?restaurant=${restaurantId}&table=${sel.id}&walkin=1`}>{t("Seat walk-in")}</Link></Button>
               </div>
             ) : null}
-            {editMode ? <Button size="sm" variant="ghost" className="mt-2" onClick={() => setEditTable(sel)}>Edit table</Button> : null}
-            <p className="mt-3 text-xs font-medium uppercase text-muted">Bookings {date}</p>
+            {editMode ? <Button size="sm" variant="ghost" className="mt-2" onClick={() => setEditTable(sel)}>{t("Edit table")}</Button> : null}
+            <p className="mt-3 text-xs font-medium uppercase text-muted">{t("Bookings")} {date}</p>
             <ul className="mt-1 space-y-1.5">
-              {selReservations.length === 0 ? <li className="text-sm text-muted">No bookings.</li> : null}
+              {selReservations.length === 0 ? <li className="text-sm text-muted">{t("No bookings.")}</li> : null}
               {selReservations.map((r) => (
                 <li key={r.id} className="rounded-lg border p-2 text-sm">
                   <div className="flex items-center justify-between">
                     <Link href={`/reservations/${r.id}`} className="font-medium hover:text-brand-700">{r.time} · {r.is_vip ? "★ " : ""}{r.customer_name} ({r.party_size})</Link>
-                    <Badge tone={STATUS_META[r.status].tone}>{STATUS_META[r.status].label}</Badge>
+                    <Badge tone={STATUS_META[r.status].tone}>{t(STATUS_META[r.status].label)}</Badge>
                   </div>
                   {r.allergies ? <p className="text-xs text-amber-700">⚠ {r.allergies}</p> : null}
                   {canOperate ? (
                     <div className="mt-1 flex gap-1">
-                      {(r.status === "confirmed" || r.status === "pending") ? <Button size="sm" variant="outline" onClick={() => run(() => setStatusAction(r.id, "arrived"), "Checked in")}>Arrived</Button> : null}
-                      {(r.status === "confirmed" || r.status === "pending" || r.status === "arrived") ? <Button size="sm" onClick={() => run(() => setStatusAction(r.id, "seated"), "Seated")}>Seat</Button> : null}
-                      {r.status === "seated" ? <Button size="sm" onClick={() => run(async () => { const res = await setStatusAction(r.id, "completed"); if (res.ok) await setTableStatusAction(sel.id, "cleaning"); return res; }, "Completed — table set to cleaning")}>Complete</Button> : null}
+                      {(r.status === "confirmed" || r.status === "pending") ? <Button size="sm" variant="outline" onClick={() => run(() => setStatusAction(r.id, "arrived"), t("Checked in"))}>{t("Arrived")}</Button> : null}
+                      {(r.status === "confirmed" || r.status === "pending" || r.status === "arrived") ? <Button size="sm" onClick={() => run(() => setStatusAction(r.id, "seated"), t("Seated"))}>{t("Seat")}</Button> : null}
+                      {r.status === "seated" ? <Button size="sm" onClick={() => run(async () => { const res = await setStatusAction(r.id, "completed"); if (res.ok) await setTableStatusAction(sel.id, "cleaning"); return res; }, "Completed — table set to cleaning")}>{t("Complete")}</Button> : null}
                     </div>
                   ) : null}
                 </li>
@@ -224,29 +226,29 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
             </ul>
             {canOperate && unassigned.length ? (
               <div className="mt-3">
-                <p className="text-xs font-medium uppercase text-muted">Assign an unassigned booking</p>
+                <p className="text-xs font-medium uppercase text-muted">{t("Assign an unassigned booking")}</p>
                 <Select className="mt-1" defaultValue="" onChange={(e) => { const id = e.target.value; if (id) run(() => assignTablesAction(id, [sel.id]), `Assigned to ${sel.label}`); }}>
-                  <option value="">Choose…</option>
+                  <option value="">{t("Choose…")}</option>
                   {unassigned.map((r) => <option key={r.id} value={r.id}>{r.time} {r.customer_name} ({r.party_size})</option>)}
                 </Select>
               </div>
             ) : null}
           </Card>
         ) : (
-          <Card className="p-4 text-sm text-muted">Select a table to see bookings and actions.</Card>
+          <Card className="p-4 text-sm text-muted">{t("Select a table to see bookings and actions.")}</Card>
         )}
         <Card className="p-4">
-          <p className="mb-2 text-sm font-semibold">Unassigned ({unassigned.length})</p>
+          <p className="mb-2 text-sm font-semibold">{t("Unassigned")} ({unassigned.length})</p>
           <ul className="space-y-1 text-sm">
             {unassigned.slice(0, 15).map((r) => <li key={r.id}><Link className="hover:text-brand-700" href={`/reservations/${r.id}`}>{r.time} · {r.customer_name} ({r.party_size})</Link></li>)}
-            {unassigned.length === 0 ? <li className="text-muted">All bookings have tables.</li> : null}
+            {unassigned.length === 0 ? <li className="text-muted">{t("All bookings have tables.")}</li> : null}
           </ul>
         </Card>
       </div>
 
       <Dialog open={editTable !== null} onOpenChange={(o) => !o && setEditTable(null)}>
         {editTable ? (
-          <DialogContent title={editTable.id ? `Edit table ${editTable.label}` : "New table"}>
+          <DialogContent title={editTable.id ? `Edit table ${editTable.label}` : t("New table")}>
             <form
               className="grid grid-cols-2 gap-3"
               action={(fd) =>
@@ -257,25 +259,25 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
                 }, "Table saved")
               }
             >
-              <Field label="Label"><Input name="label" defaultValue={editTable.label} required /></Field>
-              <Field label="Shape">
+              <Field label={t("Label")}><Input name="label" defaultValue={editTable.label} required /></Field>
+              <Field label={t("Shape")}>
                 <Select name="shape" defaultValue={editTable.shape}>
-                  <option value="rect">Rectangle</option><option value="square">Square</option><option value="round">Round</option><option value="bar">Counter / bar</option>
+                  <option value="rect">{t("Rectangle")}</option><option value="square">{t("Square")}</option><option value="round">{t("Round")}</option><option value="bar">{t("Counter / bar")}</option>
                 </Select>
               </Field>
-              <Field label="Min seats"><Input type="number" name="min_capacity" defaultValue={editTable.min_capacity} min={1} /></Field>
-              <Field label="Max seats"><Input type="number" name="max_capacity" defaultValue={editTable.max_capacity} min={1} /></Field>
-              <Field label="Area" className="col-span-2">
+              <Field label={t("Min seats")}><Input type="number" name="min_capacity" defaultValue={editTable.min_capacity} min={1} /></Field>
+              <Field label={t("Max seats")}><Input type="number" name="max_capacity" defaultValue={editTable.max_capacity} min={1} /></Field>
+              <Field label={t("Area")} className="col-span-2">
                 <Select name="area_id" defaultValue={editTable.area_id ?? ""}>
                   {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </Select>
               </Field>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_combinable" defaultChecked={editTable.is_combinable} /> Combinable</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_online_bookable" defaultChecked={editTable.is_online_bookable} /> Online bookable</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={editTable.is_active} /> Active</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_combinable" defaultChecked={editTable.is_combinable} />{" "}{t("Combinable")}</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_online_bookable" defaultChecked={editTable.is_online_bookable} />{" "}{t("Online bookable")}</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={editTable.is_active} />{" "}{t("Active")}</label>
               <div className="col-span-2 flex justify-between">
-                {editTable.id ? <Button type="button" variant="ghost" className="text-red-700" onClick={() => run(async () => { const r = await deleteTableAction(editTable.id!, restaurantId); if (r.ok) setEditTable(null); return r; }, "Table deleted")}>Delete</Button> : <span />}
-                <Button type="submit" disabled={pending}>Save table</Button>
+                {editTable.id ? <Button type="button" variant="ghost" className="text-red-700" onClick={() => run(async () => { const r = await deleteTableAction(editTable.id!, restaurantId); if (r.ok) setEditTable(null); return r; }, "Table deleted")}>{t("Delete")}</Button> : <span />}
+                <Button type="submit" disabled={pending}>{t("Save table")}</Button>
               </div>
             </form>
           </DialogContent>

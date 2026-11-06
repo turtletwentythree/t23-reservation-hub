@@ -395,14 +395,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"default_currency": string,"default_timezone": string,"id": string,"name": string,"slug": string,"updated_at": string
+                    "created_at": string,"default_currency": string,"default_timezone": string,"id": string,"name": string,"page_access": Json,"slug": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"default_currency"?: string,"default_timezone"?: string,"id"?: string,"name": string,"slug": string,"updated_at"?: string
+                    "created_at"?: string,"default_currency"?: string,"default_timezone"?: string,"id"?: string,"name": string,"page_access"?: Json,"slug": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"default_currency"?: string,"default_timezone"?: string,"id"?: string,"name"?: string,"slug"?: string,"updated_at"?: string
+                    "created_at"?: string,"default_currency"?: string,"default_timezone"?: string,"id"?: string,"name"?: string,"page_access"?: Json,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

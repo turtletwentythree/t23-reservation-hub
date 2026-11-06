@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
   canRefund: boolean;
   gateways: { name: string; configured: boolean }[];
 }) {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   const [form, setForm] = useState({ kind: "deposit", provider: "manual_transfer", amount: deposit || 0, note: "" });
@@ -39,9 +41,9 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2 text-center text-sm">
-        <div className="rounded-lg bg-slate-50 p-2"><p className="text-xs text-muted">Required</p><p className="font-semibold">{formatMoney(deposit, currency)}</p></div>
-        <div className="rounded-lg bg-brand-50 p-2"><p className="text-xs text-muted">Paid</p><p className="font-semibold text-brand-700">{formatMoney(paid, currency)}</p></div>
-        <div className="rounded-lg bg-accent-50 p-2"><p className="text-xs text-muted">Refunded</p><p className="font-semibold text-accent-700">{formatMoney(refunded, currency)}</p></div>
+        <div className="rounded-lg bg-slate-50 p-2"><p className="text-xs text-muted">{t("Required")}</p><p className="font-semibold">{formatMoney(deposit, currency)}</p></div>
+        <div className="rounded-lg bg-brand-50 p-2"><p className="text-xs text-muted">{t("Paid")}</p><p className="font-semibold text-brand-700">{formatMoney(paid, currency)}</p></div>
+        <div className="rounded-lg bg-accent-50 p-2"><p className="text-xs text-muted">{t("Refunded")}</p><p className="font-semibold text-accent-700">{formatMoney(refunded, currency)}</p></div>
       </div>
 
       {payments.length ? (
@@ -54,7 +56,7 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
               </div>
               <p className="text-xs text-muted">{p.provider}{p.paid_at ? ` · ${new Date(p.paid_at).toLocaleString()}` : ""}</p>
               {p.checkout_url && p.status === "pending" ? (
-                <p className="truncate text-xs"><a className="text-brand-700 underline" href={p.checkout_url} target="_blank" rel="noreferrer">Payment link</a></p>
+                <p className="truncate text-xs"><a className="text-brand-700 underline" href={p.checkout_url} target="_blank" rel="noreferrer">{t("Payment link")}</a></p>
               ) : null}
               {p.refunds.map((r) => (
                 <p key={r.id} className="text-xs text-accent-700">↩ Refund {formatMoney(r.amount, p.currency)} · {r.status}{r.reason ? ` · ${r.reason}` : ""}</p>
@@ -66,52 +68,52 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
                   onClick={() => {
                     const amt = window.prompt(`Refund amount (max ${p.amount})`, String(p.amount));
                     if (!amt) return;
-                    const reason = window.prompt("Reason") ?? "";
+                    const reason = window.prompt(t("Reason")) ?? "";
                     start(async () => {
                       const res = await recordRefundAction({ payment_id: p.id, amount: Number(amt), reason });
                       if (res.ok) { toast.success(res.data.message); router.refresh(); } else toast.error(res.error);
                     });
                   }}
                 >
-                  Refund
+                  {t("Refund")}
                 </button>
               ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted">No payments recorded.</p>
+        <p className="text-sm text-muted">{t("No payments recorded.")}</p>
       )}
 
       {canRecord ? (
         <details className="rounded-lg border p-3">
-          <summary className="cursor-pointer text-sm font-medium">Record payment / send payment link</summary>
+          <summary className="cursor-pointer text-sm font-medium">{t("Record payment / send payment link")}</summary>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Field label="Type">
+            <Field label={t("Type")}>
               <Select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
-                <option value="deposit">Deposit</option>
-                <option value="prepayment">Full prepayment</option>
-                <option value="no_show_fee">No-show fee</option>
-                <option value="cancellation_fee">Cancellation fee</option>
+                <option value="deposit">{t("Deposit")}</option>
+                <option value="prepayment">{t("Full prepayment")}</option>
+                <option value="no_show_fee">{t("No-show fee")}</option>
+                <option value="cancellation_fee">{t("Cancellation fee")}</option>
               </Select>
             </Field>
             <Field label={`Amount (${currency})`}>
               <Input type="number" min={1} step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
             </Field>
-            <Field label="Method" className="col-span-2">
+            <Field label={t("Method")} className="col-span-2">
               <Select value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}>
-                <option value="manual_transfer">Bank transfer (received)</option>
-                <option value="manual_cash">Cash (received)</option>
-                <option value="manual_card_terminal">Card terminal (received)</option>
+                <option value="manual_transfer">{t("Bank transfer (received)")}</option>
+                <option value="manual_cash">{t("Cash (received)")}</option>
+                <option value="manual_card_terminal">{t("Card terminal (received)")}</option>
                 {gateways.map((g) => (
                   <option key={g.name} value={g.name} disabled={!g.configured}>
-                    Online link via {g.name}{g.configured ? "" : " (not configured)"}
+                    {t("Online link via")} {g.name}{g.configured ? "" : ` (${t("not configured")})`}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Note" className="col-span-2">
-              <Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Transfer slip ref, etc. (never card numbers)" />
+            <Field label={t("Note")} className="col-span-2">
+              <Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder={t("Transfer slip ref, etc. (never card numbers)")} />
             </Field>
           </div>
           <Button
@@ -124,11 +126,11 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
                 const res = isGateway
                   ? await createPaymentLinkAction({ reservation_id: reservationId, kind: form.kind, amount: form.amount, provider: form.provider })
                   : await recordPaymentAction({ reservation_id: reservationId, ...form });
-                if (res.ok) { toast.success(isGateway ? "Payment link created" : "Payment recorded"); router.refresh(); } else toast.error(res.error);
+                if (res.ok) { toast.success(isGateway ? t("Payment link created") : t("Payment recorded")); router.refresh(); } else toast.error(res.error);
               })
             }
           >
-            {form.provider.startsWith("manual_") ? "Record received payment" : "Create payment link"}
+            {form.provider.startsWith("manual_") ? t("Record received payment") : t("Create payment link")}
           </Button>
         </details>
       ) : null}

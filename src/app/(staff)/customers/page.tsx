@@ -17,7 +17,7 @@ const SEGMENTS = { all: "All guests", vip: "VIP", repeat: "Repeat (2+ visits)", 
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("customer.view");
+  const ctx = await requireStaff("customer.view", "customers");
   const sp = await searchParams;
   const q = (pickParam(sp.q) ?? "").trim();
   const segment = (pickParam(sp.segment) ?? "all") as keyof typeof SEGMENTS;
@@ -32,7 +32,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <div>
         <PageHeader title={t("Possible duplicate guests")} description={t("Matched by phone, email or very similar name.")} actions={<Button asChild variant="outline"><Link href="/customers">{t("Back to guests")}</Link></Button>} />
         <DataTable>
-          <thead><tr><Th>Guest A</Th><Th>Guest B</Th><Th>Reason</Th><Th></Th></tr></thead>
+          <thead><tr><Th>{t("Guest A")}</Th><Th>{t("Guest B")}</Th><Th>{t("Reason")}</Th><Th></Th></tr></thead>
           <tbody>
             {(dupes ?? []).map((d) => (
               <tr key={d.customer_a + d.customer_b}>
@@ -42,7 +42,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                 <Td><MergeButton primaryId={d.customer_a} duplicateId={d.customer_b} label={`Merge B into A`} /></Td>
               </tr>
             ))}
-            {(dupes ?? []).length === 0 ? <tr><Td colSpan={4} className="py-8 text-center text-muted">No duplicates detected.</Td></tr> : null}
+            {(dupes ?? []).length === 0 ? <tr><Td colSpan={4} className="py-8 text-center text-muted">{t("No duplicates detected.")}</Td></tr> : null}
           </tbody>
         </DataTable>
       </div>
@@ -85,29 +85,29 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         description={`${count ?? 0} ${t("guest profiles shared across all branches")}`}
         actions={
           <>
-            <Button asChild variant="outline"><Link href="/customers?view=duplicates">Find duplicates</Link></Button>
+            <Button asChild variant="outline"><Link href="/customers?view=duplicates">{t("Find duplicates")}</Link></Button>
             {roleCan(ctx.role, "customer.edit") ? (
               <Dialog>
-                <DialogTrigger asChild><Button>Add guest</Button></DialogTrigger>
-                <DialogContent title="New guest profile" className="max-w-2xl"><CustomerForm /></DialogContent>
+                <DialogTrigger asChild><Button>{t("Add guest")}</Button></DialogTrigger>
+                <DialogContent title={t("New guest profile")} className="max-w-2xl"><CustomerForm /></DialogContent>
               </Dialog>
             ) : null}
           </>
         }
       />
       <form className="mb-4 flex flex-wrap gap-2">
-        <Input name="q" defaultValue={q} placeholder="Search by phone or name" className="w-64" />
+        <Input name="q" defaultValue={q} placeholder={t("Search by phone or name")} className="w-64" />
         <Select name="segment" defaultValue={segment} className="w-52">
-          {Object.entries(SEGMENTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          {Object.entries(SEGMENTS).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
         </Select>
         <Select name="tag" defaultValue={tag} className="w-40">
-          <option value="">All tags</option>
+          <option value="">{t("All tags")}</option>
           {(tags ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </Select>
-        <Button variant="outline">Search</Button>
+        <Button variant="outline">{t("Search")}</Button>
       </form>
       <DataTable>
-        <thead><tr><Th>Guest</Th><Th>Contact</Th><Th>Visits</Th><Th>No-shows</Th><Th>Last visit</Th><Th>Tags</Th></tr></thead>
+        <thead><tr><Th>{t("Guest")}</Th><Th>{t("Contact")}</Th><Th>{t("Visits")}</Th><Th>{t("No-shows")}</Th><Th>{t("Last visit")}</Th><Th>{t("Tags")}</Th></tr></thead>
         <tbody>
           {(data ?? []).map((c) => (
             <tr key={c.id} className="hover:bg-slate-50">

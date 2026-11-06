@@ -13,7 +13,7 @@ export const metadata = { title: "User management" };
 
 export default async function UsersPage() {
   const { t } = await getStaffT();
-  const ctx = await requireStaff("user.manage");
+  const ctx = await requireStaff("user.manage", "users");
   const supabase = await createClient();
   const [{ data: users }, { data: roles }, { data: access }] = await Promise.all([
     supabase.from("users").select("*").order("email"),
@@ -31,13 +31,13 @@ export default async function UsersPage() {
         description={t("Roles control what staff can do; branch access controls where.")}
         actions={
           <Dialog>
-            <DialogTrigger asChild><Button><Plus /> Add user</Button></DialogTrigger>
-            <DialogContent title="Add staff user"><UserForm restaurants={restaurants} /></DialogContent>
+            <DialogTrigger asChild><Button><Plus />{" "}{t("Add user")}</Button></DialogTrigger>
+            <DialogContent title={t("Add staff user")}><UserForm restaurants={restaurants} /></DialogContent>
           </Dialog>
         }
       />
       <DataTable>
-        <thead><tr><Th>Name</Th><Th>Email</Th><Th>Role</Th><Th>Branches</Th><Th>Status</Th><Th></Th></tr></thead>
+        <thead><tr><Th>{t("Name")}</Th><Th>{t("Email")}</Th><Th>{t("Role")}</Th><Th>{t("Branches")}</Th><Th>{t("Status")}</Th><Th></Th></tr></thead>
         <tbody>
           {(users ?? []).filter((u) => roleOf.has(u.id)).map((u) => {
             const branchIds = (access ?? []).filter((a) => a.user_id === u.id).map((a) => a.restaurant_id);
@@ -47,12 +47,12 @@ export default async function UsersPage() {
                 <Td className="font-medium">{u.full_name}</Td>
                 <Td className="text-xs">{u.email}</Td>
                 <Td>{ROLE_LABELS[role]}</Td>
-                <Td className="text-xs">{role === "super_admin" ? "All" : branchIds.map((b) => names.get(b)).join(", ") || <span className="text-amber-700">None</span>}</Td>
-                <Td>{u.is_active ? <Badge tone="green">Active</Badge> : <Badge tone="red">Inactive</Badge>}</Td>
+                <Td className="text-xs">{role === "super_admin" ? t("All") : branchIds.map((b) => names.get(b)).join(", ") || <span className="text-amber-700">{t("None")}</span>}</Td>
+                <Td>{u.is_active ? <Badge tone="green">{t("Active")}</Badge> : <Badge tone="red">{t("Inactive")}</Badge>}</Td>
                 <Td>
                   <Dialog>
-                    <DialogTrigger asChild><button className="text-xs font-medium text-brand-700 hover:underline">Edit</button></DialogTrigger>
-                    <DialogContent title="Edit user"><UserForm restaurants={restaurants} user={{ ...u, role, restaurant_ids: branchIds }} /></DialogContent>
+                    <DialogTrigger asChild><button className="text-xs font-medium text-brand-700 hover:underline">{t("Edit")}</button></DialogTrigger>
+                    <DialogContent title={t("Edit user")}><UserForm restaurants={restaurants} user={{ ...u, role, restaurant_ids: branchIds }} /></DialogContent>
                   </Dialog>
                 </Td>
               </tr>
