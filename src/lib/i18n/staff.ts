@@ -603,6 +603,10 @@ const T: Record<string, Entry> = {
   "You do not have permission for this restaurant.": { th: "คุณไม่มีสิทธิ์สำหรับร้านนี้", fr: "Vous n'avez pas l'autorisation pour ce restaurant." },
   "You do not have permission to do that.": { th: "คุณไม่มีสิทธิ์ทำรายการนี้", fr: "Vous n'avez pas l'autorisation de faire cela." },
 
+  "Daily online limit: number of bookings": { th: "จำกัดต่อวัน: จำนวนรายการจอง (ออนไลน์)", fr: "Limite quotidienne en ligne : nombre de réservations" },
+  "Daily online limit: total guests": { th: "จำกัดต่อวัน: จำนวนแขกรวม (ออนไลน์)", fr: "Limite quotidienne en ligne : nombre total de couverts" },
+  "Counts reservations, whatever the group size. E.g. 20 = accept up to 20 bookings per day. Blank = no limit": { th: "นับเป็นจำนวนรายการจอง ไม่ว่ากลุ่มละกี่คน เช่น 20 = รับได้ 20 การจองต่อวัน · เว้นว่าง = ไม่จำกัด", fr: "Compte les réservations, quelle que soit la taille du groupe. Ex. 20 = 20 réservations max. par jour. Vide = sans limite" },
+  "Counts people across all bookings. E.g. 60 = stop when booked guests reach 60 per day. Blank = no limit": { th: "นับเป็นจำนวนคนรวมทุกการจอง เช่น 60 = ปิดรับเมื่อยอดแขกครบ 60 คนต่อวัน · เว้นว่าง = ไม่จำกัด", fr: "Compte les personnes de toutes les réservations. Ex. 60 = arrêt à 60 couverts par jour. Vide = sans limite" },
   "Max online bookings per day": { th: "จำนวนการจองออนไลน์สูงสุดต่อวัน", fr: "Réservations en ligne max. par jour" },
   "Max online guests per day": { th: "จำนวนแขกจองออนไลน์สูงสุดต่อวัน", fr: "Couverts en ligne max. par jour" },
   "Leave blank for no limit": { th: "เว้นว่าง = ไม่จำกัด", fr: "Laisser vide = sans limite" },
