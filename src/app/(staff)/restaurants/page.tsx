@@ -10,10 +10,15 @@ import { RestaurantForm } from "./restaurant-form";
 
 export const metadata = { title: "Restaurants" };
 
-export default async function RestaurantsPage() {
+export default async function RestaurantsPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const ctx = await requireStaff("reservation.view");
+  const showAll = (await searchParams).show === "all";
   const supabase = await createClient();
   const { data } = await supabase.from("restaurants").select("*, tables(count), restaurant_areas(count)").order("name");
+  const all = data ?? [];
+  const disabledCount = all.filter((r) => !r.is_active).length;
+  // Switched-off restaurants are hidden by default; Admins can still open them to switch them back on.
+  const list = showAll ? all : all.filter((r) => r.is_active);
   return (
     <div>
       <PageHeader
@@ -29,7 +34,7 @@ export default async function RestaurantsPage() {
         }
       />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {(data ?? []).map((r) => (
+        {list.map((r) => (
           <Link key={r.id} href={`/restaurants/${r.id}`}>
             <Card className="h-full p-4 transition hover:border-brand-300 hover:shadow-md">
               <div className="flex items-start justify-between gap-2">
@@ -45,6 +50,15 @@ export default async function RestaurantsPage() {
           </Link>
         ))}
       </div>
+      {disabledCount > 0 && roleCan(ctx.role, "restaurant.manage") ? (
+        <p className="mt-4 text-sm text-muted">
+          {showAll ? (
+            <Link href="/restaurants" className="text-brand-700 hover:underline">Hide disabled restaurants</Link>
+          ) : (
+            <Link href="/restaurants?show=all" className="text-brand-700 hover:underline">Show {disabledCount} disabled restaurant{disabledCount === 1 ? "" : "s"}</Link>
+          )}
+        </p>
+      ) : null}
     </div>
   );
 }
