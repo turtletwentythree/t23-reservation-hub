@@ -156,7 +156,7 @@ export const waitlistSchema = z.object({
 export const inviteUserSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["super_admin", "group_manager", "restaurant_manager", "host", "viewer"]),
+  role: z.enum(["super_admin", "viewer"]),
   restaurant_ids: z.array(z.string().uuid()).default([]),
   password: z.string().min(10, "At least 10 characters").max(200),
 });
@@ -164,7 +164,7 @@ export const inviteUserSchema = z.object({
 export const updateUserAccessSchema = z.object({
   user_id: z.string().uuid(),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["super_admin", "group_manager", "restaurant_manager", "host", "viewer"]),
+  role: z.enum(["super_admin", "viewer"]),
   restaurant_ids: z.array(z.string().uuid()).default([]),
   is_active: bool(),
 });
