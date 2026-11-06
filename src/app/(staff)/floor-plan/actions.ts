@@ -78,6 +78,38 @@ export async function createAreaAction(restaurantId: string, name: string): Prom
   }
 }
 
+export async function renameAreaAction(restaurantId: string, areaId: string, name: string): Promise<ActionResult<undefined>> {
+  try {
+    const n = z.string().trim().min(1).max(60).parse(name);
+    const id = z.string().uuid().parse(areaId);
+    await assertPermission("table.layout", restaurantId);
+    const supabase = await createClient();
+    const { error } = await supabase.from("restaurant_areas").update({ name: n }).eq("id", id).eq("restaurant_id", restaurantId);
+    if (error) throw dbError(error);
+    done();
+    return ok(undefined);
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Deletes an empty area. Areas that still hold tables are refused so no table loses its zone by accident. */
+export async function deleteAreaAction(restaurantId: string, areaId: string): Promise<ActionResult<undefined>> {
+  try {
+    const id = z.string().uuid().parse(areaId);
+    await assertPermission("table.layout", restaurantId);
+    const supabase = await createClient();
+    const { count } = await supabase.from("tables").select("id", { count: "exact", head: true }).eq("area_id", id).eq("is_active", true);
+    if ((count ?? 0) > 0) throw new DomainError("validation", "Move or delete the tables in this zone first.");
+    const { error } = await supabase.from("restaurant_areas").delete().eq("id", id).eq("restaurant_id", restaurantId);
+    if (error) throw dbError(error);
+    done();
+    return ok(undefined);
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 export async function setTableStatusAction(tableId: string, status: "available" | "cleaning" | "out_of_service"): Promise<ActionResult<undefined>> {
   try {
     z.string().uuid().parse(tableId);

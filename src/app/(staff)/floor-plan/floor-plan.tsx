@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { STATUS_META } from "@/lib/domain/status";
 import type { ReservationStatus } from "@/lib/supabase/types";
 import { assignTablesAction, setStatusAction } from "../reservations/actions";
-import { createAreaAction, deleteCombinationAction, deleteTableAction, saveCombinationAction, saveLayoutAction, saveTableAction, setTableStatusAction } from "./actions";
+import { createAreaAction, deleteAreaAction, renameAreaAction, deleteCombinationAction, deleteTableAction, saveCombinationAction, saveLayoutAction, saveTableAction, setTableStatusAction } from "./actions";
 
 export type FPTable = {
   id: string; label: string; area_id: string | null; min_capacity: number; max_capacity: number; shape: "rect" | "round" | "square" | "bar";
@@ -110,7 +110,15 @@ export function FloorPlan({ restaurantId, areas, tables: initialTables, combinat
             </button>
           ))}
           {editMode && canLayout ? (
-            <Button size="sm" variant="outline" onClick={() => { const n = window.prompt("New area name"); if (n) run(() => createAreaAction(restaurantId, n), "Area added"); }}><Plus /> Area</Button>
+            <>
+              <Button size="sm" variant="outline" onClick={() => { const n = window.prompt("New zone name (e.g. Main Dining, Terrace, Private room)"); if (n) run(() => createAreaAction(restaurantId, n), "Zone added"); }}><Plus /> Zone</Button>
+              {area ? (
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => { const n = window.prompt("Rename zone", area.name); if (n && n !== area.name) run(() => renameAreaAction(restaurantId, area.id, n), "Zone renamed"); }}>Rename zone</Button>
+                  <Button size="sm" variant="ghost" className="text-red-600" onClick={() => { if (window.confirm(`Delete zone "${area.name}"? It must have no tables.`)) run(() => deleteAreaAction(restaurantId, area.id), "Zone deleted"); }}>Delete zone</Button>
+                </>
+              ) : null}
+            </>
           ) : null}
           <div className="ml-auto flex flex-wrap gap-1 text-xs">
             {(Object.keys(LIVE) as LiveStatus[]).map((s) => <span key={s} className={cn("rounded border px-1.5 py-0.5", LIVE[s].cls)}>{LIVE[s].label} {counts[s] ?? 0}</span>)}

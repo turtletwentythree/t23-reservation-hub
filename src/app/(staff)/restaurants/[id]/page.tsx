@@ -15,12 +15,20 @@ export default async function RestaurantDetail({ params }: { params: Promise<{ i
   const ctx = await requireStaff("reservation.view");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: r }, { data: policy }, { data: hours }, { data: types }] = await Promise.all([
+  const [{ data: r }, { data: policy }, { data: hours }, { data: types }, { data: areas }, { data: tables }] = await Promise.all([
     supabase.from("restaurants").select("*").eq("id", id).maybeSingle(),
     supabase.from("booking_policies").select("*").eq("restaurant_id", id).maybeSingle(),
     supabase.from("operating_hours").select("*").eq("restaurant_id", id),
     supabase.from("booking_types").select("*").eq("restaurant_id", id).order("sort_order"),
+    supabase.from("restaurant_areas").select("id, name").eq("restaurant_id", id).order("sort_order").order("name"),
+    supabase.from("tables").select("id, label, area_id, max_capacity").eq("restaurant_id", id).eq("is_active", true).order("sort_order"),
   ]);
+  const tableList = tables ?? [];
+  const zones = (areas ?? []).map((a) => {
+    const ts = tableList.filter((t) => t.area_id === a.id);
+    return { ...a, tables: ts.length, seats: ts.reduce((s, t) => s + t.max_capacity, 0), labels: ts.map((t) => t.label) };
+  });
+  const unzoned = tableList.filter((t) => !t.area_id || !(areas ?? []).some((a) => a.id === t.area_id));
   if (!r) notFound();
   const canManage = roleCan(ctx.role, "restaurant.manage");
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -40,6 +48,32 @@ export default async function RestaurantDetail({ params }: { params: Promise<{ i
         }
       />
       <Card><CardHeader><CardTitle>Details</CardTitle></CardHeader><CardContent><RestaurantForm restaurant={r} readOnly={!canManage} /></CardContent></Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle>Zones, tables & seats</CardTitle>
+          <Button asChild size="sm" variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>Edit zones & tables</Link></Button>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p className="font-medium">{tableList.length} tables · {tableList.reduce((s, t) => s + t.max_capacity, 0)} seats in {zones.length} zone{zones.length === 1 ? "" : "s"}</p>
+          <div className="divide-y rounded-lg border">
+            {zones.map((z) => (
+              <div key={z.id} className="flex flex-wrap items-baseline gap-x-3 px-3 py-2">
+                <span className="w-40 font-medium">{z.name}</span>
+                <span className="text-muted">{z.tables} tables · {z.seats} seats</span>
+                <span className="text-xs text-muted">{z.labels.join(", ")}</span>
+              </div>
+            ))}
+            {unzoned.length ? (
+              <div className="flex flex-wrap items-baseline gap-x-3 px-3 py-2">
+                <span className="w-40 font-medium">No zone</span>
+                <span className="text-muted">{unzoned.length} tables</span>
+                <span className="text-xs text-muted">{unzoned.map((t) => t.label).join(", ")}</span>
+              </div>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted">Add, rename or delete zones and tables, and set each table&apos;s name and seats, on the floor plan.</p>
+        </CardContent>
+      </Card>
       <Card><CardHeader><CardTitle>Booking rules</CardTitle></CardHeader><CardContent><PolicyForm restaurantId={r.id} policy={policy} readOnly={!canManage} /></CardContent></Card>
       <Card><CardHeader><CardTitle>Opening hours</CardTitle></CardHeader><CardContent><HoursEditor restaurantId={r.id} initial={hours ?? []} readOnly={!canManage} /></CardContent></Card>
       <Card>
