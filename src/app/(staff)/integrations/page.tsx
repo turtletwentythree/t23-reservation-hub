@@ -1,4 +1,5 @@
 import { requireStaff } from "@/lib/auth/session";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { PROVIDERS } from "@/lib/integrations/notifications/registry";
@@ -27,12 +28,13 @@ const ENV_HINT: Record<string, string> = {
 };
 
 export default async function IntegrationsPage() {
+  const { t } = await getStaffT();
   await requireStaff("integration.view");
   const supabase = await createClient();
   const { data } = await supabase.from("integrations").select("*").order("category");
   return (
     <div>
-      <PageHeader title="Integrations" description="Providers are adapters; credentials live only in server environment variables. Nothing reports success unless the provider actually confirms it." />
+      <PageHeader title={t("Integrations")} description={t("Providers are adapters; credentials live only in server environment variables. Nothing reports success unless the provider actually confirms it.")} />
       <div className="grid gap-3 md:grid-cols-2">
         {(data ?? []).map((i) => {
           const s = liveStatus(i.provider);

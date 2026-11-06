@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { requireStaff } from "@/lib/auth/session";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,7 @@ export const metadata = { title: "Customers" };
 const SEGMENTS = { all: "All guests", vip: "VIP", repeat: "Repeat (2+ visits)", new: "New (≤1 visit)", lapsed: "Lapsed (no visit 90 days)", noshow: "No-show history", birthday: "Birthday this month" } as const;
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("customer.view");
   const sp = await searchParams;
   const q = (pickParam(sp.q) ?? "").trim();
@@ -28,7 +30,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     const { data: dupes } = await supabase.rpc("find_duplicate_customers", { p_limit: 100 });
     return (
       <div>
-        <PageHeader title="Possible duplicate guests" description="Matched by phone, email or very similar name." actions={<Button asChild variant="outline"><Link href="/customers">Back to guests</Link></Button>} />
+        <PageHeader title={t("Possible duplicate guests")} description={t("Matched by phone, email or very similar name.")} actions={<Button asChild variant="outline"><Link href="/customers">{t("Back to guests")}</Link></Button>} />
         <DataTable>
           <thead><tr><Th>Guest A</Th><Th>Guest B</Th><Th>Reason</Th><Th></Th></tr></thead>
           <tbody>
@@ -79,8 +81,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <PageHeader
-        title="Guests"
-        description={`${count ?? 0} guest profiles shared across all branches`}
+        title={t("Guests")}
+        description={`${count ?? 0} ${t("guest profiles shared across all branches")}`}
         actions={
           <>
             <Button asChild variant="outline"><Link href="/customers?view=duplicates">Find duplicates</Link></Button>

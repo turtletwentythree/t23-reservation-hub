@@ -1,4 +1,5 @@
 import { requireStaff } from "@/lib/auth/session";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam } from "@/lib/data/common";
@@ -14,6 +15,7 @@ import { TemplateEditor } from "./template-editor";
 export const metadata = { title: "Notifications" };
 
 export default async function NotificationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("notification.view");
   const sp = await searchParams;
   const status = pickParam(sp.status) ?? "";
@@ -33,7 +35,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Notification center" description="Every message attempt is logged with its real delivery status." />
+      <PageHeader title={t("Notification center")} description={t("Every message attempt is logged with its real delivery status.")} />
       <div className="grid gap-3 sm:grid-cols-4">
         {Object.values(PROVIDERS).map((p) => (
           <Card key={p.channel} className="p-3">

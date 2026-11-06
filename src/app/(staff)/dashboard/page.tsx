@@ -10,12 +10,14 @@ import { RESERVATION_STATUSES, STATUS_META } from "@/lib/domain/status";
 import type { ReservationStatus } from "@/lib/supabase/types";
 import { BranchChart } from "./branch-chart";
 import { LiveRefresh } from "@/components/live-refresh";
+import { getStaffT } from "@/lib/i18n/staff-server";
 
 export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const ctx = await requireStaff("dashboard.view");
   const sp = await searchParams;
+  const { t } = await getStaffT();
   const date = pickParam(sp.date) ?? todayIn();
   const source = pickParam(sp.source) ?? "";
   const status = (pickParam(sp.status) ?? "") as ReservationStatus | "";
@@ -57,49 +59,49 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div>
       <LiveRefresh tables={["reservations", "waitlists", "tables"]} />
       <PageHeader
-        title="Dashboard"
-        description={`${ctx.selectedBranch === "all" ? `All ${ctx.restaurants.length} branches` : restaurantName.get(ctx.selectedBranch)} · ${date}`}
+        title={t("Dashboard")}
+        description={`${ctx.selectedBranch === "all" ? `${t("All branches")} (${ctx.restaurants.length})` : restaurantName.get(ctx.selectedBranch)} · ${date}`}
         actions={
           <form className="flex flex-wrap items-center gap-2">
-            <Input type="date" name="date" defaultValue={date} className="w-40" aria-label="Date" />
-            <Select name="source" defaultValue={source} className="w-40" aria-label="Booking source">
-              <option value="">All sources</option>
+            <Input type="date" name="date" defaultValue={date} className="w-40" aria-label={t("Date")} />
+            <Select name="source" defaultValue={source} className="w-40" aria-label={t("Booking source")}>
+              <option value="">{t("All sources")}</option>
               {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
-            <Select name="status" defaultValue={status} className="w-36" aria-label="Status">
-              <option value="">All statuses</option>
-              {RESERVATION_STATUSES.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+            <Select name="status" defaultValue={status} className="w-36" aria-label={t("Status")}>
+              <option value="">{t("All statuses")}</option>
+              {RESERVATION_STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_META[s].label)}</option>)}
             </Select>
-            <Button type="submit" variant="outline">Apply</Button>
+            <Button type="submit" variant="outline">{t("Apply")}</Button>
           </form>
         }
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <StatCard label="Reservations" value={live.length} hint="excl. cancelled & no-show" />
-        <StatCard label="Total covers" value={live.reduce((a, r) => a + r.party_size, 0)} tone="accent" />
-        <StatCard label="Arrived" value={count("arrived")} tone="slate" />
-        <StatCard label="Seated" value={count("seated")} tone="slate" />
-        <StatCard label="Pending confirmation" value={count("pending")} tone="accent" />
-        <StatCard label="Cancelled" value={count("cancelled")} tone="red" />
-        <StatCard label="No-shows" value={count("no_show")} tone="red" />
-        <StatCard label="Available tables now" value={`${availableTables}/${(tables ?? []).length}`} />
-        <StatCard label="Walk-in queue" value={(queue ?? []).length} tone="accent" />
-        <StatCard label="Completed" value={count("completed")} tone="slate" />
+        <StatCard label={t("Reservations")} value={live.length} hint={t("excl. cancelled & no-show")} />
+        <StatCard label={t("Total covers")} value={live.reduce((a, r) => a + r.party_size, 0)} tone="accent" />
+        <StatCard label={t("Arrived")} value={count("arrived")} tone="slate" />
+        <StatCard label={t("Seated")} value={count("seated")} tone="slate" />
+        <StatCard label={t("Pending confirmation")} value={count("pending")} tone="accent" />
+        <StatCard label={t("Cancelled")} value={count("cancelled")} tone="red" />
+        <StatCard label={t("No-shows")} value={count("no_show")} tone="red" />
+        <StatCard label={t("Available tables now")} value={`${availableTables}/${(tables ?? []).length}`} />
+        <StatCard label={t("Walk-in queue")} value={(queue ?? []).length} tone="accent" />
+        <StatCard label={t("Completed")} value={count("completed")} tone="slate" />
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-5">
         <Card className="xl:col-span-3">
-          <CardHeader><CardTitle>Branch comparison</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t("Branch comparison")}</CardTitle></CardHeader>
           <CardContent><BranchChart data={branchData} /></CardContent>
         </Card>
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Upcoming</CardTitle>
-            <Link href={`/reservations?date=${date}`} className="text-xs font-medium text-brand-600 hover:underline">View all</Link>
+            <CardTitle>{t("Upcoming")}</CardTitle>
+            <Link href={`/reservations?date=${date}`} className="text-xs font-medium text-brand-600 hover:underline">{t("View all")}</Link>
           </CardHeader>
           <CardContent className="space-y-1">
-            {upcoming.length === 0 ? <p className="py-6 text-center text-sm text-muted">No upcoming reservations.</p> : null}
+            {upcoming.length === 0 ? <p className="py-6 text-center text-sm text-muted">{t("No upcoming reservations.")}</p> : null}
             {upcoming.map((r) => (
               <Link key={r.id} href={`/reservations/${r.id}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50">
                 <span className="w-12 text-sm font-semibold tabular-nums text-slate-700">{r.reservation_time.slice(0, 5)}</span>
@@ -107,8 +109,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   <p className="truncate text-sm font-medium">{r.customer_name} · {r.party_size}p</p>
                   <p className="truncate text-xs text-muted">
                     {restaurantName.get(r.restaurant_id)}
-                    {r.reservation_tables?.length ? ` · ${r.reservation_tables.map((t) => t.tables?.label).join("+")}` : " · unassigned"}
-                    {r.allergies ? " · ⚠ allergy" : ""}
+                    {r.reservation_tables?.length ? ` · ${r.reservation_tables.map((t) => t.tables?.label).join("+")}` : ` · ${t("unassigned")}`}
+                    {r.allergies ? ` · ⚠ ${t("allergy")}` : ""}
                     {r.special_occasion ? ` · ${r.special_occasion}` : ""}
                   </p>
                 </div>

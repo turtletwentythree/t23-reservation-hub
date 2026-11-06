@@ -5,6 +5,7 @@ import {
   BarChart3, Bell, BookOpen, CalendarDays, LayoutDashboard, LayoutGrid, ListOrdered, Plug, ScrollText, Settings, Store, UserCog, Users, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/staff-locale";
 
 const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, LayoutDashboard, LayoutGrid, ListOrdered, Plug, ScrollText, Settings, Store, UserCog, Users };
 
@@ -14,6 +15,7 @@ export function Sidebar({ items, open, onClose }: {
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const t = useT();
   return (
     <>
       {open ? <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={onClose} /> : null}
@@ -28,7 +30,7 @@ export function Sidebar({ items, open, onClose }: {
             <span className="flex size-8 items-center justify-center rounded-lg bg-accent-500 text-sm font-bold text-white">T23</span>
             <span>Reservation Hub</span>
           </Link>
-          <button className="rounded p-1 hover:bg-brand-800 lg:hidden" onClick={onClose} aria-label="Close menu">
+          <button className="rounded p-1 hover:bg-brand-800 lg:hidden" onClick={onClose} aria-label={t("Close menu")}>
             <X className="size-4" />
           </button>
         </div>

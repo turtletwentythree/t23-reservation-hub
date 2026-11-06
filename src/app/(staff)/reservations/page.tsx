@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { Plus, Download } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { roleCan } from "@/lib/auth/permissions";
@@ -18,6 +19,7 @@ const PAGE_SIZE = 50;
 const SORTS = { time: "starts_at", created: "created_at", party: "party_size", name: "customer_name" } as const;
 
 export default async function ReservationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const sp = await searchParams;
   const from = pickParam(sp.from) ?? pickParam(sp.date) ?? todayIn();
@@ -62,8 +64,8 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
     <div>
       <LiveRefresh tables={["reservations"]} />
       <PageHeader
-        title="Reservations"
-        description={`${count ?? 0} reservations · ${from} → ${to}`}
+        title={t("Reservations")}
+        description={`${count ?? 0} ${t("reservations")} · ${from} → ${to}`}
         actions={
           <>
             <Button asChild variant="outline"><a href={`/api/export/reservations?${params}`}><Download /> CSV</a></Button>

@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { requireStaff } from "@/lib/auth/session";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -11,6 +12,7 @@ import { UserForm } from "./user-form";
 export const metadata = { title: "User management" };
 
 export default async function UsersPage() {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("user.manage");
   const supabase = await createClient();
   const [{ data: users }, { data: roles }, { data: access }] = await Promise.all([
@@ -25,8 +27,8 @@ export default async function UsersPage() {
   return (
     <div>
       <PageHeader
-        title="User management"
-        description="Roles control what staff can do; branch access controls where."
+        title={t("User management")}
+        description={t("Roles control what staff can do; branch access controls where.")}
         actions={
           <Dialog>
             <DialogTrigger asChild><Button><Plus /> Add user</Button></DialogTrigger>

@@ -1,4 +1,5 @@
 import { requireStaff } from "@/lib/auth/session";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { getReservationFormData } from "@/lib/data/reservation-form-data";
 import { pickParam, todayIn, DEFAULT_TZ } from "@/lib/data/common";
 import { formatInTimeZone } from "date-fns-tz";
@@ -9,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata = { title: "New reservation" };
 
 export default async function NewReservationPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.write");
   const sp = await searchParams;
   const data = await getReservationFormData(ctx);
@@ -23,7 +25,7 @@ export default async function NewReservationPage({ searchParams }: { searchParam
   const roundedNow = `${String(hh).padStart(2, "0")}:${String(Math.floor(mm / 5) * 5).padStart(2, "0")}`;
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title={walkIn ? "Seat a walk-in" : "New reservation"} description="Availability updates as you change date and party size." />
+      <PageHeader title={walkIn ? t("Seat a walk-in") : t("New reservation")} description={t("Availability updates as you change date and party size.")} />
       <Card className="p-4 sm:p-6">
         <ReservationForm
           {...data}

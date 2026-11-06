@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { Download } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { addDays, pickParam, todayIn } from "@/lib/data/common";
@@ -13,6 +14,7 @@ import { PeakChart, TrendChart } from "./charts";
 export const metadata = { title: "Reports" };
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("report.view");
   const sp = await searchParams;
   const today = todayIn();
@@ -29,8 +31,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Reports & analytics"
-        description={`${from} → ${to} · ${ctx.selectedBranch === "all" ? "all branches" : ctx.restaurants.find((x) => x.id === ctx.selectedBranch)?.name} · calculated from ${r.rowCount} reservation records`}
+        title={t("Reports & analytics")}
+        description={`${from} → ${to} · ${ctx.selectedBranch === "all" ? t("all branches") : ctx.restaurants.find((x) => x.id === ctx.selectedBranch)?.name} · ${t("calculated from")} ${r.rowCount} ${t("reservation records")}`}
         actions={
           <>
             <Button asChild variant="outline"><a href={`/api/export/report?${qs}&format=csv`}><Download /> CSV</a></Button>

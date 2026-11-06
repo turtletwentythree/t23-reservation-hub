@@ -1,4 +1,5 @@
 import { requireStaff } from "@/lib/auth/session";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam, todayIn } from "@/lib/data/common";
@@ -13,6 +14,7 @@ import { WaitlistBoard } from "./waitlist-board";
 export const metadata = { title: "Waitlist" };
 
 export default async function WaitlistPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const sp = await searchParams;
   const restaurantId = [pickParam(sp.restaurant), ctx.selectedBranch].find((x) => x && x !== "all" && ctx.restaurants.some((r) => r.id === x)) ?? ctx.restaurants[0]?.id;
@@ -45,8 +47,8 @@ export default async function WaitlistPage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <LiveRefresh tables={["waitlists", "reservations"]} />
       <PageHeader
-        title={`Walk-in & waitlist · ${restaurant.name}`}
-        description={`${active.length} waiting · ${freeTables.length} tables free now`}
+        title={`${t("Walk-in & waitlist")} · ${restaurant.name}`}
+        description={`${active.length} ${t("waiting")} · ${freeTables.length} ${t("tables free now")}`}
         actions={
           <form className="flex gap-2">
             {ctx.restaurants.length > 1 ? (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
@@ -12,6 +13,7 @@ import { HoursEditor } from "./hours-editor";
 import { BookingTypes } from "./booking-types";
 
 export default async function RestaurantDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const { id } = await params;
   const supabase = await createClient();
@@ -39,7 +41,7 @@ export default async function RestaurantDetail({ params }: { params: Promise<{ i
       <Link href="/restaurants" className="inline-flex items-center gap-1 text-sm text-muted hover:text-slate-800"><ArrowLeft className="size-4" /> Restaurants</Link>
       <PageHeader
         title={r.name}
-        description={r.is_active ? "Active branch" : "Disabled branch"}
+        description={r.is_active ? t("Active branch") : t("Disabled branch")}
         actions={
           <>
             <Button asChild variant="outline"><Link href={`/floor-plan?restaurant=${r.id}&edit=1`}>Tables & floor plan</Link></Button>

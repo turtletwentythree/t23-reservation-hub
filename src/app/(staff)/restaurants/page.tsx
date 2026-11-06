@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { Plus } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { roleCan } from "@/lib/auth/permissions";
@@ -11,6 +12,7 @@ import { RestaurantForm } from "./restaurant-form";
 export const metadata = { title: "Restaurants" };
 
 export default async function RestaurantsPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const showAll = (await searchParams).show === "all";
   const supabase = await createClient();
@@ -22,8 +24,8 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
   return (
     <div>
       <PageHeader
-        title="Restaurants"
-        description="Branches, booking rules, opening hours and booking links."
+        title={t("Restaurants")}
+        description={t("Branches, booking rules, opening hours and booking links.")}
         actions={
           roleCan(ctx.role, "restaurant.create") ? (
             <Dialog>

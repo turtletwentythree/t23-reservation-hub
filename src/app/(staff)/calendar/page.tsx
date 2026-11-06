@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ export const metadata = { title: "Calendar" };
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const sp = await searchParams;
   const view = (pickParam(sp.view) ?? "month") as "month" | "week" | "day";
@@ -63,8 +65,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   return (
     <div>
       <PageHeader
-        title="Calendar"
-        description={ctx.selectedBranch === "all" ? `All branches` : names.get(ctx.selectedBranch)}
+        title={t("Calendar")}
+        description={ctx.selectedBranch === "all" ? t("All branches") : names.get(ctx.selectedBranch)}
         actions={
           <div className="flex items-center gap-2">
             <div className="flex rounded-lg border bg-white p-0.5">

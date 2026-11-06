@@ -1,4 +1,5 @@
 import { requireStaff } from "@/lib/auth/session";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam } from "@/lib/data/common";
 import { Badge, PageHeader } from "@/components/ui/card";
@@ -10,6 +11,7 @@ export const metadata = { title: "Audit logs" };
 const ENTITIES = ["reservations", "customers", "customer_consents", "restaurants", "tables", "booking_policies", "operating_hours", "user_roles", "restaurant_user_access", "payments", "refunds", "waitlists", "integrations", "api_keys", "webhook_endpoints", "data_subject_requests", "notification_templates"];
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   await requireStaff("audit.view");
   const sp = await searchParams;
   const entity = pickParam(sp.entity) ?? "";
@@ -25,7 +27,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const rest = new Map((restaurants ?? []).map((r) => [r.id, r.name]));
   return (
     <div>
-      <PageHeader title="Audit logs" description="Every create, update and delete on key records — written by database triggers, not the app." />
+      <PageHeader title={t("Audit logs")} description={t("Every create, update and delete on key records — written by database triggers, not the app.")} />
       <form className="mb-4 flex flex-wrap gap-2">
         <Select name="entity" defaultValue={entity} className="w-56"><option value="">All records</option>{ENTITIES.map((e) => <option key={e} value={e}>{e}</option>)}</Select>
         <Select name="action" defaultValue={action} className="w-40"><option value="">All actions</option>{["insert", "update", "delete", "merge", "grant_access", "revoke_access"].map((a) => <option key={a}>{a}</option>)}</Select>

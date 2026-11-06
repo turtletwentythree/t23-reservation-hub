@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getStaffT } from "@/lib/i18n/staff-server";
 import { requireStaff } from "@/lib/auth/session";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ import { FloorPlan, type FPTable } from "./floor-plan";
 export const metadata = { title: "Floor plan" };
 
 export default async function FloorPlanPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getStaffT();
   const ctx = await requireStaff("reservation.view");
   const sp = await searchParams;
   const restaurantId = [pickParam(sp.restaurant), ctx.selectedBranch].find((x) => x && x !== "all" && ctx.restaurants.some((r) => r.id === x)) ?? ctx.restaurants[0]?.id;
@@ -43,8 +45,8 @@ export default async function FloorPlanPage({ searchParams }: { searchParams: Pr
     <div>
       <LiveRefresh tables={["reservations", "reservation_tables", "tables"]} />
       <PageHeader
-        title={`Floor plan · ${restaurant.name}`}
-        description="Live table status. Click a table to seat, check in or change its status."
+        title={`${t("Floor plan")} · ${restaurant.name}`}
+        description={t("Live table status. Click a table to seat, check in or change its status.")}
         actions={
           <form className="flex flex-wrap items-center gap-2">
             {ctx.restaurants.length > 1 ? (

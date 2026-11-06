@@ -1,7 +1,9 @@
 "use client";
+import { useT } from "@/components/staff-locale";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export function BranchChart({ data }: { data: { name: string; reservations: number; covers: number }[] }) {
+  const t = useT();
   return (
     <div className="h-72 w-full">
       <ResponsiveContainer>
@@ -11,8 +13,8 @@ export function BranchChart({ data }: { data: { name: string; reservations: numb
           <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
           <Tooltip />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="reservations" name="Reservations" fill="#2f7d4f" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="covers" name="Covers" fill="#e8772e" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="reservations" name={t("Reservations")} fill="#2f7d4f" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="covers" name={t("Total covers")} fill="#e8772e" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
