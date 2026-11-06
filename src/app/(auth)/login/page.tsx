@@ -4,9 +4,9 @@ import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   if (await getStaffContext()) redirect("/dashboard");
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   return (
     <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl sm:p-8">
@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-xs text-muted">Staff sign in</p>
           </div>
         </div>
-        <LoginForm next={next} />
+        <LoginForm next={next} error={error} />
         <p className="mt-6 text-center text-xs text-muted">Accounts are created by a T23 administrator.</p>
       </div>
     </div>

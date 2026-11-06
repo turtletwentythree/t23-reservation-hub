@@ -158,7 +158,8 @@ export const inviteUserSchema = z.object({
   full_name: z.string().trim().min(1).max(120),
   role: z.enum(["super_admin", "viewer"]),
   restaurant_ids: z.array(z.string().uuid()).default([]),
-  password: z.string().min(10, "At least 10 characters").max(200),
+  // Optional: staff who sign in with Microsoft 365 do not need a password.
+  password: z.string().min(10, "At least 10 characters").max(200).optional().or(z.literal("").transform(() => undefined)),
 });
 
 export const updateUserAccessSchema = z.object({

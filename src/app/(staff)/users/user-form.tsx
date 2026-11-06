@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
-import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/auth/permissions";
+import { ASSIGNABLE_ROLES } from "@/lib/auth/permissions";
 import type { AppRole } from "@/lib/supabase/types";
 import { createUserAction, updateUserAction } from "./actions";
 
@@ -30,7 +30,7 @@ export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: s
     >
       {!user ? <Field label="Email"><Input name="email" type="email" required /></Field> : <p className="text-sm text-muted">{user.email}</p>}
       <Field label="Full name"><Input name="full_name" defaultValue={user?.full_name ?? ""} required /></Field>
-      {!user ? <Field label="Temporary password" hint="Share securely; the user should change it after first sign-in."><Input name="password" type="text" minLength={10} required /></Field> : null}
+      {!user ? <Field label="Temporary password (optional)" hint="Leave blank if this person signs in with Microsoft 365 using the same email."><Input name="password" type="text" minLength={10} /></Field> : null}
       <Field label="Role">
         <Select value={role} onChange={(e) => setRole(e.target.value as AppRole)}>
           {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{r === "super_admin" ? "Admin: full access, manages users and settings" : "View: read-only"}</option>)}

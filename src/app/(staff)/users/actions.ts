@@ -19,7 +19,8 @@ export async function createUserAction(raw: unknown): Promise<ActionResult<{ id:
     const admin = createAdminClient();
     const { data, error } = await admin.auth.admin.createUser({
       email: input.email,
-      password: input.password,
+      // Without a password the account can only sign in with Microsoft 365 (same email).
+      password: input.password ?? `${crypto.randomUUID()}${crypto.randomUUID()}`,
       email_confirm: true,
       user_metadata: { full_name: input.full_name },
     });

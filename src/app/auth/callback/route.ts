@@ -1,0 +1,27 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+/**
+ * OAuth return URL (Microsoft 365). Exchanges the code for a session, then lets in
+ * only people who already have a staff account; anyone else is signed out again.
+ */
+export async function GET(request: NextRequest) {
+  const url = request.nextUrl;
+  const code = url.searchParams.get("code");
+  const nextParam = url.searchParams.get("next");
+  const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
+  const toLogin = (error: string) => NextResponse.redirect(new URL(`/login?error=${error}`, url.origin));
+
+  if (!code) return toLogin("microsoft_failed");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error || !data.user) return toLogin("microsoft_failed");
+
+  const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).limit(1).maybeSingle();
+  const { data: profile } = await supabase.from("users").select("is_active").eq("id", data.user.id).maybeSingle();
+  if (!role || !profile?.is_active) {
+    await supabase.auth.signOut();
+    return toLogin("not_staff");
+  }
+  return NextResponse.redirect(new URL(next, url.origin));
+}
