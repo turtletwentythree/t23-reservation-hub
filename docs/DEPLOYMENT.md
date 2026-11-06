@@ -49,10 +49,10 @@ Production runs on Supabase Cloud (database, auth, realtime) and Vercel (Next.js
 
    Generate secrets with `openssl rand -base64 32`.
 3. Crons are defined in `vercel.json`:
-   - `/api/cron/notifications` runs every 10 minutes. It sends queued messages, retries failures and retries webhooks.
-   - `/api/cron/reminders` runs hourly and queues reminders for the next day.
+   - `/api/cron/notifications` retries failed messages and webhooks.
+   - `/api/cron/reminders` queues reminders for bookings starting `REMINDER_LEAD_HOURS` (default 14) to `REMINDER_LEAD_HOURS + REMINDER_WINDOW_HOURS` (default 24) hours ahead. The defaults match a daily run at 03:00 UTC; with an hourly cron set them to 20 and 1.
 
-   The Vercel Hobby plan only runs crons once a day. Use Pro, or call both URLs from an external scheduler with `Authorization: Bearer $CRON_SECRET`.
+   `vercel.json` currently schedules both jobs **once a day** (01:00 and 03:00 UTC) because the Vercel Hobby plan rejects more frequent crons. On Pro, change them to `*/10 * * * *` (notifications) and `0 * * * *` (reminders), or call both URLs from an external scheduler with `Authorization: Bearer $CRON_SECRET`. Messages are still sent immediately when a booking changes; the cron only retries failures and queues reminders.
 4. Payment webhooks:
    - Stripe: add an endpoint at `https://<domain>/api/webhooks/payments/stripe` for `checkout.session.completed`, `checkout.session.expired` and `checkout.session.async_payment_failed`, then copy its signing secret to `STRIPE_WEBHOOK_SECRET`.
    - Omise: set the webhook URL to `https://<domain>/api/webhooks/payments/omise`. Events are re-fetched from the Omise API before they are trusted.

@@ -175,18 +175,25 @@ export async function processDueNotifications(limit = 50) {
   return results;
 }
 
-/** Cron: queue reminders for confirmed bookings starting in the next 20-28 hours. */
+/**
+ * Cron: queue reminders for confirmed bookings starting between LEAD and LEAD+WINDOW hours from now.
+ * Defaults (14h lead, 24h window) suit a once-a-day cron at 03:00 UTC: each run covers all of the next
+ * Bangkok day, and consecutive runs neither overlap nor leave gaps. For an hourly cron use 20 and 8 (or 1).
+ * reminder_sent_at prevents duplicates either way.
+ */
 export async function queueDueReminders() {
   const admin = createAdminClient();
-  const from = new Date(Date.now() + 20 * 3600_000).toISOString();
-  const to = new Date(Date.now() + 28 * 3600_000).toISOString();
+  const lead = Number(process.env.REMINDER_LEAD_HOURS ?? 14);
+  const window = Number(process.env.REMINDER_WINDOW_HOURS ?? 24);
+  const from = new Date(Date.now() + lead * 3600_000).toISOString();
+  const to = new Date(Date.now() + (lead + window) * 3600_000).toISOString();
   const { data } = await admin
     .from("reservations")
     .select("id")
     .eq("status", "confirmed")
     .is("reminder_sent_at", null)
     .gte("starts_at", from)
-    .lte("starts_at", to)
+    .lt("starts_at", to)
     .limit(200);
   for (const r of data ?? []) {
     await queueReservationNotification(r.id, "booking_reminder");
