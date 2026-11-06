@@ -603,6 +603,11 @@ const T: Record<string, Entry> = {
   "You do not have permission for this restaurant.": { th: "คุณไม่มีสิทธิ์สำหรับร้านนี้", fr: "Vous n'avez pas l'autorisation pour ce restaurant." },
   "You do not have permission to do that.": { th: "คุณไม่มีสิทธิ์ทำรายการนี้", fr: "Vous n'avez pas l'autorisation de faire cela." },
 
+  "Max online bookings per day": { th: "จำนวนการจองออนไลน์สูงสุดต่อวัน", fr: "Réservations en ligne max. par jour" },
+  "Max online guests per day": { th: "จำนวนแขกจองออนไลน์สูงสุดต่อวัน", fr: "Couverts en ligne max. par jour" },
+  "Leave blank for no limit": { th: "เว้นว่าง = ไม่จำกัด", fr: "Laisser vide = sans limite" },
+  "Online booking for this date is full. Please contact the restaurant.": { th: "การจองออนไลน์ของวันนี้เต็มแล้ว กรุณาติดต่อร้าน", fr: "Les réservations en ligne sont complètes pour cette date. Contactez le restaurant." },
+
   // Page headers
   "User management": { th: "จัดการผู้ใช้", fr: "Gestion des utilisateurs" },
   "Roles control what staff can do; branch access controls where.": { th: "สิทธิ์กำหนดว่าพนักงานทำอะไรได้ ส่วนสาขากำหนดว่าทำได้ที่ร้านไหน", fr: "Le rôle définit ce que chacun peut faire, l'accès aux établissements définit où." },

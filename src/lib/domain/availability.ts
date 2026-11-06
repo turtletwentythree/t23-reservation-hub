@@ -21,6 +21,9 @@ export interface PolicyInput {
   max_party_size: number;
   min_advance_minutes: number;
   max_advance_days: number;
+  /** Optional caps on online bookings for one day (null = no cap). */
+  max_online_bookings_per_day?: number | null;
+  max_online_covers_per_day?: number | null;
 }
 
 export interface HoursInput {
@@ -91,17 +94,28 @@ export interface AvailabilityRequest {
   durationOverride?: number | null;
   /** Ignore this reservation's own occupancy (used when modifying a booking). */
   ignoreReservationId?: string;
+  /** Active (not cancelled / no-show) bookings already on this date, for the daily caps. */
+  dayTotals?: { bookings: number; covers: number };
 }
 
 export type AvailabilityResult =
   | { ok: true; durationMinutes: number; slots: Slot[] }
-  | { ok: false; reason: "closed" | "party_size_out_of_range" | "outside_booking_window" | "invalid_date"; slots: [] };
+  | { ok: false; reason: "closed" | "party_size_out_of_range" | "outside_booking_window" | "invalid_date" | "fully_booked"; slots: [] };
 
 const toMinutes = (t: string) => {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 };
 const fmt = (mins: number) => `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+
+/** True when one more online booking of this size would exceed the restaurant's daily caps. */
+export function dailyCapReached(policy: PolicyInput, totals: { bookings: number; covers: number }, partySize: number): boolean {
+  const maxBookings = policy.max_online_bookings_per_day;
+  const maxCovers = policy.max_online_covers_per_day;
+  if (maxBookings != null && totals.bookings >= maxBookings) return true;
+  if (maxCovers != null && totals.covers + partySize > maxCovers) return true;
+  return false;
+}
 
 /** Seating duration (turn time) for a party, from policy rules or the default. */
 export function durationForParty(policy: PolicyInput, partySize: number, override?: number | null): number {
@@ -158,6 +172,7 @@ export function computeAvailability(req: AvailabilityRequest): AvailabilityResul
   if (channel === "online") {
     const maxDate = formatInTimeZone(new Date(now.getTime() + policy.max_advance_days * 86_400_000), timezone, "yyyy-MM-dd");
     if (req.date < today || req.date > maxDate) return { ok: false, reason: "outside_booking_window", slots: [] };
+    if (req.dayTotals && dailyCapReached(policy, req.dayTotals, partySize)) return { ok: false, reason: "fully_booked", slots: [] };
   }
 
   const services = servicesForDate(req.hours, req.date);

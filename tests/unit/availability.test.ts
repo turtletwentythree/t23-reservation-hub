@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeAvailability,
+  dailyCapReached,
   durationForParty,
   localToUtc,
   servicesForDate,
@@ -169,5 +170,28 @@ describe("computeAvailability", () => {
   it("reports closed days", () => {
     const closed = hours.map((h) => (h.day_of_week === 2 ? { ...h, is_closed: true } : h));
     expect(computeAvailability(base({ hours: closed }))).toMatchObject({ ok: false, reason: "closed" });
+  });
+});
+
+describe("daily online caps", () => {
+  const capped = { ...policy, max_online_bookings_per_day: 3, max_online_covers_per_day: 10 };
+  it("allows booking while under both caps", () => {
+    const r = computeAvailability(base({ policy: capped, partySize: 2, dayTotals: { bookings: 2, covers: 8 } }));
+    expect(r.ok).toBe(true);
+  });
+  it("stops online booking once the booking cap is reached", () => {
+    const r = computeAvailability(base({ policy: capped, partySize: 2, dayTotals: { bookings: 3, covers: 6 } }));
+    expect(r).toMatchObject({ ok: false, reason: "fully_booked" });
+  });
+  it("stops online booking when the party would go over the guest cap", () => {
+    const r = computeAvailability(base({ policy: capped, partySize: 3, dayTotals: { bookings: 1, covers: 8 } }));
+    expect(r).toMatchObject({ ok: false, reason: "fully_booked" });
+  });
+  it("does not apply the caps to staff bookings", () => {
+    const r = computeAvailability(base({ policy: capped, partySize: 2, channel: "staff", dayTotals: { bookings: 99, covers: 99 } }));
+    expect(r.ok).toBe(true);
+  });
+  it("treats empty caps as no limit", () => {
+    expect(dailyCapReached({ ...policy, max_online_bookings_per_day: null, max_online_covers_per_day: null }, { bookings: 500, covers: 2000 }, 4)).toBe(false);
   });
 });

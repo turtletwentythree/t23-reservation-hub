@@ -98,6 +98,8 @@ export const policySchema = z.object({
   max_party_size: z.coerce.number().int().min(1).max(200),
   min_advance_minutes: z.coerce.number().int().min(0).max(60 * 24 * 14),
   max_advance_days: z.coerce.number().int().min(1).max(730),
+  max_online_bookings_per_day: z.coerce.number().int().min(1).max(10_000).optional().or(z.literal("").transform(() => undefined)),
+  max_online_covers_per_day: z.coerce.number().int().min(1).max(100_000).optional().or(z.literal("").transform(() => undefined)),
   cancellation_cutoff_hours: z.coerce.number().int().min(0).max(720),
   modification_cutoff_hours: z.coerce.number().int().min(0).max(720),
   auto_confirm_online: bool(false),

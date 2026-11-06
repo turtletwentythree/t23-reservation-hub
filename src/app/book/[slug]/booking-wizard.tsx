@@ -143,7 +143,7 @@ export function BookingWizard(p: Props) {
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><Clock className="size-4 text-brand-600" /> {t.selectTime}</p>
             {loading ? <p className="text-sm text-muted">{t.loading}</p> : times && times.length === 0 ? (
-              <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{reason === "closed" ? t.closed : error ?? t.noTimes}</p>
+              <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{reason === "closed" ? t.closed : reason === "fully_booked" ? t.fullyBooked : error ?? t.noTimes}</p>
             ) : (
               <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
                 {(times ?? []).map((x) => (

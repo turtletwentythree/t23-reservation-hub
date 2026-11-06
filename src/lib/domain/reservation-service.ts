@@ -93,6 +93,16 @@ export async function loadOccupancy(client: Client, restaurantId: string, date: 
   }));
 }
 
+/** Bookings and guests already on a date (excluding cancelled and no-shows), for the daily caps. */
+export async function loadDayTotals(client: Client, restaurantId: string, date: string, ignoreReservationId?: string) {
+  let q = client.from("reservations").select("id, party_size").eq("restaurant_id", restaurantId).eq("reservation_date", date).not("status", "in", "(cancelled,no_show)");
+  if (ignoreReservationId) q = q.neq("id", ignoreReservationId);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  return { bookings: rows.length, covers: rows.reduce((a, r) => a + r.party_size, 0) };
+}
+
 export async function getAvailability(
   client: Client,
   args: {
@@ -107,6 +117,8 @@ export async function getAvailability(
 ): Promise<AvailabilityResult & { config: RestaurantConfig }> {
   const config = args.config ?? (await loadRestaurantConfig(client, args.restaurantId));
   const occupancy = await loadOccupancy(client, args.restaurantId, args.date, config.restaurant.timezone);
+  const hasCaps = config.policy.max_online_bookings_per_day != null || config.policy.max_online_covers_per_day != null;
+  const dayTotals = args.channel === "online" && hasCaps ? await loadDayTotals(client, args.restaurantId, args.date, args.ignoreReservationId) : undefined;
   const result = computeAvailability({
     date: args.date,
     partySize: args.partySize,
@@ -120,6 +132,7 @@ export async function getAvailability(
     channel: args.channel,
     durationOverride: args.durationOverride,
     ignoreReservationId: args.ignoreReservationId,
+    dayTotals,
   });
   return { ...result, config };
 }
@@ -229,6 +242,8 @@ export function availabilityMessage(reason: string) {
       return "This party size cannot be booked online. Please contact the restaurant.";
     case "outside_booking_window":
       return "This date is outside the booking window.";
+    case "fully_booked":
+      return "Online booking for this date is full. Please contact the restaurant.";
     default:
       return "Invalid date.";
   }
