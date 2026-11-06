@@ -31,14 +31,14 @@ Built with Next.js 15 (App Router, Server Actions), TypeScript, Tailwind CSS v4,
 
 ## Roles
 
-User management offers two roles: **Admin** and **View**. The database still supports the finer-grained roles below (used by the demo seed), but they can no longer be assigned from the app.
+User management offers three roles: **Admin** (everything), **Store** (front of house: reservations, walk-ins, waitlist, tables, guests; no settings, users or reports) and **View** (read-only). The database still supports the finer-grained roles below (used by the demo seed), but they can no longer be assigned from the app.
 
 | Role | Scope |
 | --- | --- |
 | Admin | Everything, all branches. Creates restaurants, users, API keys and templates; handles PDPA requests |
 | Group Manager | Assigned branches: operations, guests, reports, audit log |
 | Restaurant Manager | Assigned branch: operations plus restaurant settings, layout, refunds |
-| Reservation Staff / Host | Assigned branch: reservations, tables, walk-ins, waitlist, guests |
+| Store (host) | Assigned branch: reservations, tables, walk-ins, waitlist, guests |
 | View | Read-only on assigned branches: dashboard, reservations, guests and reports |
 | Customer | Public booking page and their own manage link only (no staff login) |
 

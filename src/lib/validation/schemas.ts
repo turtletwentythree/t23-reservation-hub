@@ -156,7 +156,7 @@ export const waitlistSchema = z.object({
 export const inviteUserSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["super_admin", "viewer"]),
+  role: z.enum(["super_admin", "host", "viewer"]),
   restaurant_ids: z.array(z.string().uuid()).default([]),
   // Optional: staff who sign in with Microsoft 365 do not need a password.
   password: z.string().min(10, "At least 10 characters").max(200).optional().or(z.literal("").transform(() => undefined)),
@@ -165,7 +165,7 @@ export const inviteUserSchema = z.object({
 export const updateUserAccessSchema = z.object({
   user_id: z.string().uuid(),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["super_admin", "viewer"]),
+  role: z.enum(["super_admin", "host", "viewer"]),
   restaurant_ids: z.array(z.string().uuid()).default([]),
   is_active: bool(),
 });

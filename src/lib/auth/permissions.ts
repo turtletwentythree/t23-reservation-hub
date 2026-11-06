@@ -41,12 +41,15 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Admin",
   group_manager: "Group Manager",
   restaurant_manager: "Restaurant Manager",
-  host: "Reservation Staff / Host",
+  host: "Store",
   viewer: "View",
 };
 
-/** Roles that can be given to users from User management: Admin (full access) and View (read-only). */
-export const ASSIGNABLE_ROLES = ["super_admin", "viewer"] as const;
+/**
+ * Roles that can be given to users from User management:
+ * Admin (full access), Store (front of house: runs reservations day to day) and View (read-only).
+ */
+export const ASSIGNABLE_ROLES = ["super_admin", "host", "viewer"] as const;
 
 export class AuthorizationError extends Error {
   constructor(message = "You do not have permission to do that.") {

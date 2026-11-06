@@ -5,13 +5,19 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
 import { ASSIGNABLE_ROLES } from "@/lib/auth/permissions";
+
+const ROLE_HINTS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
+  super_admin: "Admin: full access, manages users and settings",
+  host: "Store: reservations, walk-ins, waitlist, tables and guests",
+  viewer: "View: read-only",
+};
 import type { AppRole } from "@/lib/supabase/types";
 import { createUserAction, updateUserAction } from "./actions";
 
 type U = { id: string; email: string; full_name: string | null; is_active: boolean; role: AppRole; restaurant_ids: string[] };
 
 export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: string; name: string }[] }) {
-  const [role, setRole] = useState<AppRole>(user?.role === "super_admin" ? "super_admin" : "viewer");
+  const [role, setRole] = useState<AppRole>(user?.role === "super_admin" || user?.role === "host" ? user.role : "viewer");
   const [branches, setBranches] = useState<string[]>(user?.restaurant_ids ?? restaurants.map((r) => r.id));
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -33,7 +39,7 @@ export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: s
       {!user ? <Field label="Temporary password (optional)" hint="Leave blank if this person signs in with Microsoft 365 using the same email."><Input name="password" type="text" minLength={10} /></Field> : null}
       <Field label="Role">
         <Select value={role} onChange={(e) => setRole(e.target.value as AppRole)}>
-          {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{r === "super_admin" ? "Admin: full access, manages users and settings" : "View: read-only"}</option>)}
+          {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_HINTS[r]}</option>)}
         </Select>
       </Field>
       <div>
