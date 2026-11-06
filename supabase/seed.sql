@@ -62,11 +62,13 @@ begin
       jsonb_build_object(
         'en', 'Free cancellation up to 24 hours before your reservation. Late cancellations and no-shows may forfeit the deposit.',
         'th', 'ยกเลิกได้ฟรีก่อนเวลาจอง 24 ชั่วโมง การยกเลิกล่าช้าหรือไม่มาตามนัดอาจถูกริบเงินมัดจำ',
-        'ja', 'ご予約の24時間前までキャンセル無料です。直前のキャンセルや無断キャンセルの場合、デポジットは返金されないことがあります。'),
+        'ja', 'ご予約の24時間前までキャンセル無料です。直前のキャンセルや無断キャンセルの場合、デポジットは返金されないことがあります。',
+        'fr', 'Annulation gratuite jusqu''à 24 heures avant votre réservation. En cas d''annulation tardive ou d''absence, l''acompte peut être conservé.'),
       jsonb_build_object(
         'en', 'Please arrive on time. Tables are held for 15 minutes.',
         'th', 'กรุณามาตรงเวลา ทางร้านจะเก็บโต๊ะไว้ 15 นาที',
-        'ja', '時間厳守でお願いいたします。お席は15分間お取り置きいたします。'));
+        'ja', '時間厳守でお願いいたします。お席は15分間お取り置きいたします。',
+        'fr', 'Merci d''arriver à l''heure. Les tables sont réservées pendant 15 minutes.'));
 
     for d in 0..6 loop
       if counter_style then
@@ -95,7 +97,7 @@ begin
       select id into t3 from public.tables where restaurant_id = r.id and label = 'C2';
       select id into t4 from public.tables where restaurant_id = r.id and label = 'C3';
       insert into public.booking_types (restaurant_id, name, description, duration_minutes, sort_order) values
-        (r.id, '{"en":"Omakase course","th":"คอร์สโอมากาเสะ","ja":"おまかせコース"}', '{"en":"Chef''s seasonal course","th":"คอร์สตามฤดูกาลของเชฟ","ja":"季節のおまかせ"}', 150, 0);
+        (r.id, '{"en":"Omakase course","th":"คอร์สโอมากาเสะ","ja":"おまかせコース","fr":"Menu omakase"}', '{"en":"Chef''s seasonal course","th":"คอร์สตามฤดูกาลของเชฟ","ja":"季節のおまかせ","fr":"Menu de saison du chef"}', 150, 0);
     else
       insert into public.restaurant_areas (restaurant_id, name, sort_order) values (r.id, 'Main Dining', 0) returning id into main_area;
       insert into public.restaurant_areas (restaurant_id, name, sort_order) values (r.id, 'Terrace', 1) returning id into second_area;
@@ -114,7 +116,7 @@ begin
       select id into t3 from public.tables where restaurant_id = r.id and label = 'T3';
       select id into t4 from public.tables where restaurant_id = r.id and label = 'T4';
       insert into public.booking_types (restaurant_id, name, description, sort_order) values
-        (r.id, '{"en":"À la carte","th":"อาหารตามสั่ง","ja":"アラカルト"}', null, 0);
+        (r.id, '{"en":"À la carte","th":"อาหารตามสั่ง","ja":"アラカルト","fr":"À la carte"}', null, 0);
     end if;
 
     insert into public.table_combinations (restaurant_id, name, min_capacity, max_capacity)
@@ -149,7 +151,15 @@ insert into public.notification_templates (organization_id, event, channel, loca
   ('00000000-0000-4000-8000-000000000001', 'waitlist_ready', 'line', 'en', null,
    '🔔 {{restaurant_name}}: your table is ready (queue #{{queue_number}}). Please come to the host stand.'),
   ('00000000-0000-4000-8000-000000000001', 'birthday_campaign', 'email', 'en', 'Happy birthday from {{restaurant_name}}',
-   'Dear {{customer_name}},\n\nHappy birthday from all of us at T23! We would love to celebrate with you.');
+   'Dear {{customer_name}},\n\nHappy birthday from all of us at T23! We would love to celebrate with you.'),
+  ('00000000-0000-4000-8000-000000000001', 'booking_confirmation', 'email', 'fr', 'Votre réservation chez {{restaurant_name}} est confirmée',
+   'Bonjour {{customer_name}},\n\nMerci d''avoir réservé chez {{restaurant_name}}.\nRéférence : {{reference}}\nDate : {{date}} à {{time}}\nConvives : {{party_size}}\n\nGérer votre réservation : {{manage_url}}\n\nNous avons hâte de vous accueillir.'),
+  ('00000000-0000-4000-8000-000000000001', 'booking_reminder', 'email', 'fr', 'Rappel : {{restaurant_name}} demain',
+   'Bonjour {{customer_name}},\n\nNous vous rappelons votre réservation chez {{restaurant_name}} le {{date}} à {{time}} pour {{party_size}} convives.\nRéférence : {{reference}}\nGérer : {{manage_url}}'),
+  ('00000000-0000-4000-8000-000000000001', 'booking_modification', 'email', 'fr', 'Votre réservation chez {{restaurant_name}} a été modifiée',
+   'Bonjour {{customer_name}},\n\nVotre réservation {{reference}} est désormais prévue le {{date}} à {{time}} pour {{party_size}} convives.\nGérer : {{manage_url}}'),
+  ('00000000-0000-4000-8000-000000000001', 'booking_cancellation', 'email', 'fr', 'Votre réservation chez {{restaurant_name}} a été annulée',
+   'Bonjour {{customer_name}},\n\nVotre réservation {{reference}} du {{date}} à {{time}} a été annulée.\nNous espérons vous accueillir une prochaine fois.');
 
 -- Integrations registry (nothing is active until credentials are configured) --------
 insert into public.integrations (organization_id, provider, category, display_name, status, notes) values

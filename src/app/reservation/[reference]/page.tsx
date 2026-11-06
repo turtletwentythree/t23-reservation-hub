@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyManageToken, manageUrl } from "@/lib/tokens";
-import { DICTIONARIES, resolveLocale } from "@/lib/i18n/dictionaries";
+import { DATE_LOCALES, DICTIONARIES, resolveLocale } from "@/lib/i18n/dictionaries";
 import { QrCode } from "@/components/qr-code";
 import { formatMoney } from "@/lib/utils";
 import { GuestActions } from "./guest-actions";
@@ -33,7 +33,7 @@ export default async function GuestReservationPage({ params, searchParams }: { p
   const open = ["pending", "confirmed"].includes(r.status);
   const canModify = open && msLeft > (policy?.modification_cutoff_hours ?? 24) * 3600_000;
   const canCancel = open && msLeft > (policy?.cancellation_cutoff_hours ?? 24) * 3600_000;
-  const dateLabel = new Date(r.reservation_date + "T00:00:00Z").toLocaleDateString(locale === "th" ? "th-TH" : locale === "ja" ? "ja-JP" : "en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateLabel = new Date(r.reservation_date + "T00:00:00Z").toLocaleDateString(DATE_LOCALES[locale], { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const Icon = r.status === "cancelled" ? XCircle : r.status === "pending" ? Clock3 : CheckCircle2;
   const title = r.status === "cancelled" ? t.cancelledTitle : r.status === "pending" ? t.pendingTitle : t.confirmedTitle;
   const currency = r.restaurants?.currency ?? "THB";

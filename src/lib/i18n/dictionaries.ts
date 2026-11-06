@@ -1,6 +1,8 @@
-export type Locale = "en" | "th" | "ja";
-export const LOCALES: Locale[] = ["en", "th", "ja"];
-export const LOCALE_NAMES: Record<Locale, string> = { en: "English", th: "ไทย", ja: "日本語" };
+export type Locale = "en" | "th" | "ja" | "fr";
+export const LOCALES: Locale[] = ["en", "th", "ja", "fr"];
+export const LOCALE_NAMES: Record<Locale, string> = { en: "English", th: "ไทย", ja: "日本語", fr: "Français" };
+/** BCP 47 tags for date formatting. */
+export const DATE_LOCALES: Record<Locale, string> = { en: "en-GB", th: "th-TH", ja: "ja-JP", fr: "fr-FR" };
 
 const en = {
   bookTable: "Book a table",
@@ -164,7 +166,60 @@ const ja: Dict = {
   statuses: { pending: "確認待ち", confirmed: "確定", arrived: "来店", seated: "着席", completed: "完了", cancelled: "キャンセル", no_show: "無断キャンセル" },
 };
 
-export const DICTIONARIES: Record<Locale, Dict> = { en, th, ja };
+const fr: Dict = {
+  bookTable: "Réserver une table",
+  date: "Date",
+  guests: "Convives",
+  guest: "convive",
+  guestsPlural: "convives",
+  time: "Heure",
+  selectTime: "Choisissez une heure",
+  noTimes: "Aucune table disponible à cette date. Essayez une autre date ou un autre nombre de convives.",
+  closed: "Le restaurant est fermé à cette date.",
+  loading: "Vérification des disponibilités…",
+  bookingType: "Type de réservation / menu",
+  yourDetails: "Vos coordonnées",
+  fullName: "Nom complet",
+  phone: "Téléphone",
+  email: "E-mail",
+  occasion: "Occasion spéciale",
+  occasionPh: "Anniversaire, anniversaire de mariage, repas d'affaires…",
+  dietary: "Régime alimentaire",
+  allergies: "Allergies",
+  requests: "Demandes particulières",
+  policy: "Conditions de réservation",
+  acceptPolicy: "J'ai lu et j'accepte les conditions de réservation et d'annulation, et je consens au traitement de mes données personnelles par T23 pour gérer cette réservation.",
+  marketing: "Je souhaite recevoir les actualités et offres des restaurants T23 (facultatif).",
+  confirm: "Confirmer la réservation",
+  confirming: "Confirmation…",
+  deposit: "Acompte requis",
+  depositNote: "Un acompte est requis pour garantir cette réservation.",
+  next: "Continuer",
+  back: "Retour",
+  summary: "Récapitulatif",
+  largeParty: "Pour les groupes plus importants, veuillez contacter directement le restaurant.",
+  maxParty: "La réservation en ligne est possible jusqu'à {n} convives.",
+  reservation: "Réservation",
+  reference: "Référence",
+  status: "Statut",
+  confirmedTitle: "Votre réservation est confirmée",
+  pendingTitle: "Votre demande de réservation a bien été reçue",
+  pendingNote: "Le restaurant confirmera votre réservation sous peu.",
+  cancelledTitle: "Cette réservation a été annulée",
+  showQr: "Présentez ce QR code à votre arrivée.",
+  modify: "Modifier la réservation",
+  cancel: "Annuler la réservation",
+  cancelConfirm: "Voulez-vous vraiment annuler cette réservation ?",
+  cutoffPassed: "Les modifications en ligne ne sont plus possibles. Veuillez contacter le restaurant.",
+  saveChanges: "Enregistrer",
+  invalidLink: "Ce lien est invalide ou a expiré.",
+  payDeposit: "Payer l'acompte",
+  depositPendingContact: "Le paiement en ligne n'est pas encore disponible. Le restaurant vous contactera au sujet de l'acompte.",
+  paid: "Payé",
+  statuses: { pending: "En attente de confirmation", confirmed: "Confirmée", arrived: "Arrivé", seated: "Installé", completed: "Terminée", cancelled: "Annulée", no_show: "Absent" },
+};
+
+export const DICTIONARIES: Record<Locale, Dict> = { en, th, ja, fr };
 export type Dictionary = Dict;
 
 export function resolveLocale(v: string | null | undefined, acceptLanguage?: string | null): Locale {
@@ -172,5 +227,6 @@ export function resolveLocale(v: string | null | undefined, acceptLanguage?: str
   const al = (acceptLanguage ?? "").toLowerCase();
   if (al.startsWith("th")) return "th";
   if (al.startsWith("ja")) return "ja";
+  if (al.startsWith("fr")) return "fr";
   return "en";
 }

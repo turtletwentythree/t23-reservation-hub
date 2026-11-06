@@ -20,10 +20,10 @@ Built with Next.js 15 (App Router, Server Actions), TypeScript, Tailwind CSS v4,
 - **Availability engine**: works from opening hours and date overrides, last seating, turn time by party size, buffers, booking interval, advance limits, table combinations and table service status.
 - **Floor plan**: drag-and-drop layout editor, live table status (available, reserved, arrived, seated, cleaning, out of service), combined tables, and seating directly from the plan.
 - **Calendar**: month, week and day timeline views.
-- **Online booking**: `/book/<restaurant-slug>` is mobile-first and available in Thai, English and Japanese. It supports deposits and records PDPA consent. Guests get a manage page with a QR code where they can modify or cancel within the policy. Embed it with `/book/<slug>?embed=1`.
+- **Online booking**: `/book/<restaurant-slug>` is mobile-first and available in Thai, English, Japanese and French. It supports deposits and records PDPA consent. Guests get a manage page with a QR code where they can modify or cancel within the policy. Embed it with `/book/<slug>?embed=1`.
 - **Guest CRM**: cross-branch history, VIP flags, tags, segments, duplicate detection and merge, consent ledger, PDPA export and anonymisation.
 - **Walk-ins and waitlist**: queue numbers, wait estimates and a notify action. Seating a guest from the waitlist creates a walk-in reservation.
-- **Notifications**: email (Resend), SMS (Twilio), LINE and WhatsApp adapters, editable TH/EN/JA templates, a delivery log, and retries with backoff. If a provider has no credentials, the message is logged as `not_configured` and is never reported as sent.
+- **Notifications**: email (Resend), SMS (Twilio), LINE and WhatsApp adapters, editable TH/EN/JA/FR templates, a delivery log, and retries with backoff. If a provider has no credentials, the message is logged as `not_configured` and is never reported as sent.
 - **Payments**: Stripe Checkout and Omise payment links via adapters, plus manual records for cash, transfer and card terminal. Refunds are supported. No card data is stored.
 - **Reports**: occupancy, covers, cancellation and no-show rates, source mix, peak hours, branch comparison and repeat guests, all calculated from real rows. Export to CSV or Excel. POS revenue shows as *pending* until FoodStory is connected; it is never estimated.
 - **Integrations**: REST API with hashed, scoped and rate-limited keys; signed outbound webhooks with retries; FoodStory adapter kept *pending* until vendor documentation and API access are confirmed.

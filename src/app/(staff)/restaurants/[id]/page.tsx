@@ -52,7 +52,7 @@ export default async function RestaurantDetail({ params }: { params: Promise<{ i
         <CardHeader><CardTitle>Booking links & embed widget</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>Direct link (use for Google Business Profile, Instagram, LINE OA): <code className="rounded bg-slate-100 px-1">{base}/book/{r.slug}</code></p>
-          <p>Language-specific: <code className="rounded bg-slate-100 px-1">?lang=th</code> · <code className="rounded bg-slate-100 px-1">?lang=ja</code></p>
+          <p>Language-specific: <code className="rounded bg-slate-100 px-1">?lang=th</code> · <code className="rounded bg-slate-100 px-1">?lang=ja</code> · <code className="rounded bg-slate-100 px-1">?lang=fr</code></p>
           <p>Embed on a website:</p>
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{embed}</pre>
         </CardContent>

@@ -29,7 +29,7 @@ export function CustomerForm({ customer, readOnly }: { customer?: Customer; read
         <Field label="Phone"><Input name="phone" defaultValue={c?.phone ?? ""} /></Field>
         <Field label="Email"><Input name="email" type="email" defaultValue={c?.email ?? ""} /></Field>
         <Field label="Preferred language">
-          <Select name="preferred_language" defaultValue={c?.preferred_language ?? "en"}><option value="en">English</option><option value="th">ไทย</option><option value="ja">日本語</option></Select>
+          <Select name="preferred_language" defaultValue={c?.preferred_language ?? "en"}><option value="en">English</option><option value="th">ไทย</option><option value="ja">日本語</option><option value="fr">Français</option></Select>
         </Field>
         <Field label="Birthday"><Input name="birthday" type="date" defaultValue={c?.birthday ?? ""} /></Field>
         <Field label="LINE user ID" hint="Set when the guest connects via LINE OA"><Input name="line_user_id" defaultValue={c?.line_user_id ?? ""} /></Field>

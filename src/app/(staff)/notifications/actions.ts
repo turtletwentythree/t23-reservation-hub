@@ -30,7 +30,7 @@ const templateSchema = z.object({
   id: z.string().uuid().optional(),
   event: z.enum(["booking_confirmation", "booking_reminder", "booking_modification", "booking_cancellation", "waitlist_ready", "birthday_campaign"]),
   channel: z.enum(["email", "sms", "line", "whatsapp"]),
-  locale: z.enum(["en", "th", "ja"]),
+  locale: z.enum(["en", "th", "ja", "fr"]),
   subject: z.string().max(200).optional(),
   body: z.string().min(1).max(5000),
   is_active: z.boolean().default(true),

@@ -147,7 +147,7 @@ export interface CreateArgs {
   customer_name: string;
   phone?: string;
   email?: string;
-  language: "en" | "th" | "ja";
+  language: "en" | "th" | "ja" | "fr";
   reservation_date: string;
   reservation_time: string;
   party_size: number;

@@ -4,7 +4,7 @@ import { CalendarDays, Clock, Users, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
-import { DICTIONARIES, LOCALE_NAMES, LOCALES, type Locale } from "@/lib/i18n/dictionaries";
+import { DATE_LOCALES, DICTIONARIES, LOCALE_NAMES, LOCALES, type Locale } from "@/lib/i18n/dictionaries";
 import { getPublicSlotsAction, publicBookAction } from "../actions";
 
 type BookingType = { id: string; name: Record<string, string>; description: Record<string, string> | null; price: number | null; deposit_override: number | null };
@@ -59,7 +59,7 @@ export function BookingWizard(p: Props) {
     });
   }, [date, party, typeId, p.slug]);
 
-  const fmtDate = (d: string, opts: Intl.DateTimeFormatOptions) => new Date(d + "T00:00:00Z").toLocaleDateString(locale === "th" ? "th-TH" : locale === "ja" ? "ja-JP" : "en-GB", { timeZone: "UTC", ...opts });
+  const fmtDate = (d: string, opts: Intl.DateTimeFormatOptions) => new Date(d + "T00:00:00Z").toLocaleDateString(DATE_LOCALES[locale], { timeZone: "UTC", ...opts });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

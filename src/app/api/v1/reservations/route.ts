@@ -12,7 +12,7 @@ const body = z.object({
   date: dateString,
   time: timeString,
   party_size: z.number().int().min(1).max(50),
-  customer: z.object({ name: z.string().trim().min(1).max(120), phone: phoneString.optional(), email: z.string().email().optional(), language: z.enum(["en", "th", "ja"]).default("en") }),
+  customer: z.object({ name: z.string().trim().min(1).max(120), phone: phoneString.optional(), email: z.string().email().optional(), language: z.enum(["en", "th", "ja", "fr"]).default("en") }),
   notes: z.string().max(1000).optional(),
   allergies: z.string().max(500).optional(),
   special_occasion: z.string().max(120).optional(),

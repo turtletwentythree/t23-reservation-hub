@@ -58,12 +58,12 @@ export async function updatePolicyAction(restaurantId: string, raw: unknown): Pr
     const input = policySchema.parse(raw);
     await assertPermission("restaurant.manage", restaurantId);
     const supabase = await createClient();
-    const { cancellation_policy_en, cancellation_policy_th, cancellation_policy_ja, large_party_threshold, ...rest } = input;
+    const { cancellation_policy_en, cancellation_policy_th, cancellation_policy_ja, cancellation_policy_fr, large_party_threshold, ...rest } = input;
     const row = {
       ...rest,
       large_party_threshold: large_party_threshold ?? null,
       duration_rules: [...input.duration_rules].sort((a, b) => a.max_party - b.max_party),
-      cancellation_policy: { en: cancellation_policy_en ?? "", th: cancellation_policy_th ?? "", ja: cancellation_policy_ja ?? "" },
+      cancellation_policy: { en: cancellation_policy_en ?? "", th: cancellation_policy_th ?? "", ja: cancellation_policy_ja ?? "", fr: cancellation_policy_fr ?? "" },
       restaurant_id: restaurantId,
     };
     const { error } = await supabase.from("booking_policies").upsert(row, { onConflict: "restaurant_id" });
@@ -125,6 +125,7 @@ const bookingTypeSchema = z.object({
   name_en: z.string().trim().min(1).max(100),
   name_th: z.string().trim().max(100).optional(),
   name_ja: z.string().trim().max(100).optional(),
+  name_fr: z.string().trim().max(100).optional(),
   price: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
   duration_minutes: z.coerce.number().int().min(15).max(600).optional().or(z.literal("").transform(() => undefined)),
   deposit_override: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
@@ -139,7 +140,7 @@ export async function saveBookingTypeAction(restaurantId: string, raw: unknown):
     const supabase = await createClient();
     const row = {
       restaurant_id: restaurantId,
-      name: { en: b.name_en, th: b.name_th || b.name_en, ja: b.name_ja || b.name_en },
+      name: { en: b.name_en, th: b.name_th || b.name_en, ja: b.name_ja || b.name_en, fr: b.name_fr || b.name_en },
       price: b.price ?? null,
       duration_minutes: b.duration_minutes ?? null,
       deposit_override: b.deposit_override ?? null,

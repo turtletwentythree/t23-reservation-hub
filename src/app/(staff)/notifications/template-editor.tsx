@@ -27,7 +27,7 @@ export function TemplateEditor({ template }: { template?: T }) {
         </Field>
         <Field label="Language">
           <Select value={t.locale} onChange={(e) => setT({ ...t, locale: e.target.value })} disabled={Boolean(template)}>
-            <option value="en">English</option><option value="th">Thai</option><option value="ja">Japanese</option>
+            <option value="en">English</option><option value="th">Thai</option><option value="ja">Japanese</option><option value="fr">French</option>
           </Select>
         </Field>
       </div>

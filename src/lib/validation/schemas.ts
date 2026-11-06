@@ -26,7 +26,7 @@ export const reservationInputSchema = z.object({
   customer_name: z.string().trim().min(1, "Name is required").max(120),
   phone: phoneString.optional().or(z.literal("").transform(() => undefined)),
   email: z.string().trim().email().max(200).optional().or(z.literal("").transform(() => undefined)),
-  language: z.enum(["en", "th", "ja"]).default("en"),
+  language: z.enum(["en", "th", "ja", "fr"]).default("en"),
   reservation_date: dateString,
   reservation_time: timeString,
   party_size: z.coerce.number().int().min(1).max(200),
@@ -60,7 +60,7 @@ export const publicBookingSchema = z.object({
   customer_name: z.string().trim().min(2).max(120),
   phone: phoneString,
   email: z.string().trim().email().max(200),
-  language: z.enum(["en", "th", "ja"]).default("en"),
+  language: z.enum(["en", "th", "ja", "fr"]).default("en"),
   special_occasion: optText(120),
   dietary_requirements: optText(500),
   allergies: optText(500),
@@ -113,6 +113,7 @@ export const policySchema = z.object({
   cancellation_policy_en: optText(2000),
   cancellation_policy_th: optText(2000),
   cancellation_policy_ja: optText(2000),
+  cancellation_policy_fr: optText(2000),
 }).refine((v) => v.max_party_size >= v.min_party_size, { message: "Max party size must be ≥ min", path: ["max_party_size"] });
 
 export const tableSchema = z.object({
@@ -132,7 +133,7 @@ export const customerSchema = z.object({
   full_name: z.string().trim().min(1).max(120),
   phone: phoneString.optional().or(z.literal("").transform(() => undefined)),
   email: z.string().trim().email().max(200).optional().or(z.literal("").transform(() => undefined)),
-  preferred_language: z.enum(["en", "th", "ja"]).default("en"),
+  preferred_language: z.enum(["en", "th", "ja", "fr"]).default("en"),
   birthday: dateString.optional().or(z.literal("").transform(() => undefined)),
   is_vip: bool(false),
   vip_note: optText(300),

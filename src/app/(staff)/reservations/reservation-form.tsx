@@ -26,7 +26,7 @@ export type ReservationFormValues = {
   customer_name: string;
   phone: string;
   email: string;
-  language: "en" | "th" | "ja";
+  language: "en" | "th" | "ja" | "fr";
   reservation_date: string;
   reservation_time: string;
   party_size: number;
@@ -293,6 +293,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
             <option value="en">English</option>
             <option value="th">ไทย</option>
             <option value="ja">日本語</option>
+            <option value="fr">Français</option>
           </Select>
         </Field>
         {!isEdit ? (

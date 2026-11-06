@@ -80,10 +80,11 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
         </div>
         <div>
           <h4 className="mb-2 text-sm font-semibold">Cancellation policy shown to guests</h4>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="English"><Textarea name="cancellation_policy_en" rows={3} defaultValue={cp.en ?? ""} /></Field>
             <Field label="ไทย"><Textarea name="cancellation_policy_th" rows={3} defaultValue={cp.th ?? ""} /></Field>
             <Field label="日本語"><Textarea name="cancellation_policy_ja" rows={3} defaultValue={cp.ja ?? ""} /></Field>
+            <Field label="Français"><Textarea name="cancellation_policy_fr" rows={3} defaultValue={cp.fr ?? ""} /></Field>
           </div>
         </div>
         {!readOnly ? <Button type="submit">{pending ? "Saving…" : "Save booking rules"}</Button> : null}
