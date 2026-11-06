@@ -32,7 +32,7 @@ export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: s
           const res = user
             ? await updateUserAction({ ...base, user_id: user.id, is_active: fd.get("is_active") === "on" })
             : await createUserAction({ ...base, email: fd.get("email"), password: fd.get("password") });
-          if (res.ok) { toast.success(user ? t("User updated") : t("User created")); router.refresh(); } else toast.error(res.error);
+          if (res.ok) { toast.success(user ? t("User updated") : t("User created")); router.refresh(); } else toast.error(t(res.error));
         })
       }
     >

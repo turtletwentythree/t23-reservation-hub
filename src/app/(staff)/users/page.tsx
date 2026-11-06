@@ -46,7 +46,7 @@ export default async function UsersPage() {
               <tr key={u.id}>
                 <Td className="font-medium">{u.full_name}</Td>
                 <Td className="text-xs">{u.email}</Td>
-                <Td>{ROLE_LABELS[role]}</Td>
+                <Td>{t(ROLE_LABELS[role])}</Td>
                 <Td className="text-xs">{role === "super_admin" ? t("All") : branchIds.map((b) => names.get(b)).join(", ") || <span className="text-amber-700">{t("None")}</span>}</Td>
                 <Td>{u.is_active ? <Badge tone="green">{t("Active")}</Badge> : <Badge tone="red">{t("Inactive")}</Badge>}</Td>
                 <Td>

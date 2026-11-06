@@ -20,7 +20,7 @@ export function RestaurantForm({ restaurant, readOnly }: { restaurant?: R; readO
         start(async () => {
           const data = Object.fromEntries(fd);
           const res = restaurant?.id ? await updateRestaurantAction(restaurant.id, data) : await createRestaurantAction(data);
-          if (!res.ok) return void toast.error(res.error);
+          if (!res.ok) return void toast.error(t(res.error));
           toast.success(restaurant?.id ? t("Restaurant saved") : t("Restaurant created"));
           if (!restaurant?.id) router.push(`/restaurants/${res.data.id}`);
           router.refresh();

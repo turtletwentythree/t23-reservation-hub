@@ -114,7 +114,7 @@ export function HoursEditor({ restaurantId, initial, readOnly }: { restaurantId:
           onClick={() =>
             start(async () => {
               const res = await saveHoursAction(restaurantId, rows);
-              if (res.ok) { toast.success(t("Opening hours saved")); router.refresh(); } else toast.error(res.error);
+              if (res.ok) { toast.success(t("Opening hours saved")); router.refresh(); } else toast.error(t(res.error));
             })
           }
         >

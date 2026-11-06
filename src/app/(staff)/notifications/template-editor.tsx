@@ -45,7 +45,7 @@ export function TemplateEditor({ template }: { template?: T }) {
         onClick={() =>
           start(async () => {
             const res = await saveTemplateAction({ ...tpl, subject: tpl.subject ?? undefined });
-            if (res.ok) { toast.success(t("Template saved")); router.refresh(); } else toast.error(res.error);
+            if (res.ok) { toast.success(t("Template saved")); router.refresh(); } else toast.error(t(res.error));
           })
         }
       >

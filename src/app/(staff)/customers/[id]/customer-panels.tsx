@@ -16,7 +16,7 @@ export function TagPicker({ customerId, tags, assigned, canEdit }: { customerId:
     if (!canEdit) return;
     const next = sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id];
     setSel(next);
-    start(async () => { const r = await setCustomerTagsAction(customerId, next); if (!r.ok) toast.error(r.error); });
+    start(async () => { const r = await setCustomerTagsAction(customerId, next); if (!r.ok) toast.error(t(r.error)); });
   };
   return (
     <div className="space-y-2">
@@ -28,7 +28,7 @@ export function TagPicker({ customerId, tags, assigned, canEdit }: { customerId:
         ))}
       </div>
       {canEdit ? (
-        <form className="flex gap-1" action={(fd) => start(async () => { const r = await createTagAction(String(fd.get("name")), String(fd.get("color"))); if (r.ok) router.refresh(); else toast.error(r.error); })}>
+        <form className="flex gap-1" action={(fd) => start(async () => { const r = await createTagAction(String(fd.get("name")), String(fd.get("color"))); if (r.ok) router.refresh(); else toast.error(t(r.error)); })}>
           <Input name="name" placeholder={t("New tag")} className="h-8" required />
           <input type="color" name="color" defaultValue="#2f7d4f" className="h-8 w-10 rounded border" aria-label={t("Tag colour")} />
           <Button size="sm" variant="outline">{t("Add")}</Button>
@@ -56,7 +56,7 @@ export function ConsentPanel({ customerId, current, canEdit }: { customerId: str
         <li key={k} className="flex items-center justify-between gap-2">
           <span>{label}</span>
           <label className="flex items-center gap-1 text-xs">
-            <input type="checkbox" disabled={!canEdit || pending} checked={current[k] ?? false} onChange={(e) => start(async () => { const r = await recordConsentAction(customerId, k, e.target.checked); if (r.ok) { toast.success(t("Consent recorded")); router.refresh(); } else toast.error(r.error); })} />
+            <input type="checkbox" disabled={!canEdit || pending} checked={current[k] ?? false} onChange={(e) => start(async () => { const r = await recordConsentAction(customerId, k, e.target.checked); if (r.ok) { toast.success(t("Consent recorded")); router.refresh(); } else toast.error(t(r.error)); })} />
             {current[k] === undefined ? "not asked" : current[k] ? "granted" : "withdrawn"}
           </label>
         </li>
@@ -75,7 +75,7 @@ export function PrivacyPanel({ customerId }: { customerId: string }) {
       <Button variant="destructive" size="sm" disabled={pending} onClick={() => {
         const note = window.prompt(t("Type the request reference or reason to confirm erasure"));
         if (!note) return;
-        start(async () => { const r = await anonymizeCustomerAction(customerId, note); if (r.ok) { toast.success(t("Guest anonymized")); router.refresh(); } else toast.error(r.error); });
+        start(async () => { const r = await anonymizeCustomerAction(customerId, note); if (r.ok) { toast.success(t("Guest anonymized")); router.refresh(); } else toast.error(t(r.error)); });
       }}>{t("Erase personal data")}</Button>
     </div>
   );

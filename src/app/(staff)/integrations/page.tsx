@@ -42,10 +42,10 @@ export default async function IntegrationsPage() {
             <Card key={i.id} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div><p className="font-semibold">{i.display_name}</p><p className="text-xs uppercase text-muted">{i.category}</p></div>
-                {s ? <Badge tone={s.tone}>{s.label}</Badge> : <Badge>{i.status}</Badge>}
+                {s ? <Badge tone={s.tone}>{t(s.label)}</Badge> : <Badge>{i.status}</Badge>}
               </div>
-              {i.notes ? <p className="mt-2 text-sm text-slate-600">{i.notes}</p> : null}
-              <p className="mt-2 text-xs text-muted">Setup: {ENV_HINT[i.provider] ?? "—"}</p>
+              {i.notes ? <p className="mt-2 text-sm text-slate-600">{t(i.notes)}</p> : null}
+              <p className="mt-2 text-xs text-muted">{t("Setup")}: {ENV_HINT[i.provider] ?? "—"}</p>
             </Card>
           );
         })}

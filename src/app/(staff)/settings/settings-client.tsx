@@ -8,10 +8,11 @@ import { Field, Input, Select } from "@/components/ui/input";
 import { createApiKeyAction, createWebhookAction, retentionAction, revokeApiKeyAction, saveSourceAction, toggleWebhookAction } from "./actions";
 
 function useRun() {
+  const t = useT();
   const [pending, start] = useTransition();
   const router = useRouter();
   const run = <T,>(fn: () => Promise<{ ok: true; data: T } | { ok: false; error: string }>, msg: string, then?: (d: T) => void) =>
-    start(async () => { const r = await fn(); if (r.ok) { toast.success(msg); then?.(r.data); router.refresh(); } else toast.error(r.error); });
+    start(async () => { const r = await fn(); if (r.ok) { toast.success(msg); then?.(r.data); router.refresh(); } else toast.error(t(r.error)); });
   return { pending, run };
 }
 

@@ -13,7 +13,7 @@ export function MergeButton({ primaryId, duplicateId, label }: { primaryId: stri
   return (
     <Button size="sm" variant="outline" disabled={pending} onClick={() => {
       if (!window.confirm(t("Merge these guests? Reservations, consents and tags move to guest A; guest B is removed."))) return;
-      start(async () => { const r = await mergeCustomersAction(primaryId, duplicateId); if (r.ok) { toast.success(t("Guests merged")); router.refresh(); } else toast.error(r.error); });
+      start(async () => { const r = await mergeCustomersAction(primaryId, duplicateId); if (r.ok) { toast.success(t("Guests merged")); router.refresh(); } else toast.error(t(r.error)); });
     }}>{label}</Button>
   );
 }

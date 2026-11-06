@@ -23,7 +23,7 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
         start(async () => {
           const data = { ...Object.fromEntries(fd), duration_rules: rules };
           const res = await updatePolicyAction(restaurantId, data);
-          if (res.ok) { toast.success(t("Booking rules saved")); router.refresh(); } else toast.error(res.error);
+          if (res.ok) { toast.success(t("Booking rules saved")); router.refresh(); } else toast.error(t(res.error));
         })
       }
     >

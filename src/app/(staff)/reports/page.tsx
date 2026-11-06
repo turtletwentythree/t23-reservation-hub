@@ -42,7 +42,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       />
       <div className="flex flex-wrap items-center gap-2">
         {[["day", "Daily"], ["week", "Weekly (7 days)"], ["month", "Monthly (30 days)"]].map(([k, l]) => (
-          <Link key={k} href={`/reports?preset=${k}`} className={cn("rounded-full border px-3 py-1 text-sm", preset === k ? "border-brand-500 bg-brand-500 text-white" : "bg-white")}>{l}</Link>
+          <Link key={k} href={`/reports?preset=${k}`} className={cn("rounded-full border px-3 py-1 text-sm", preset === k ? "border-brand-500 bg-brand-500 text-white" : "bg-white")}>{t(l)}</Link>
         ))}
         <form className="flex items-center gap-2">
           <input type="hidden" name="preset" value="custom" />
@@ -56,9 +56,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <StatCard label={t("Total covers")} value={s.covers} tone="accent" hint={t("excl. cancelled/no-show")} />
         <StatCard label={t("Occupancy rate")} value={`${s.occupancyRate}%`} hint={t("booked seat-min ÷ open seat-min")} />
         <StatCard label={t("Avg party size")} value={s.avgPartySize} tone="slate" />
-        <StatCard label={t("Cancellation rate")} value={`${s.cancellationRate}%`} tone="red" hint={`${s.cancelled} cancelled`} />
-        <StatCard label={t("No-show rate")} value={`${s.noShowRate}%`} tone="red" hint={`${s.noShows} of non-cancelled`} />
-        <StatCard label={t("Repeat guest rate")} value={`${s.repeatCustomerRate}%`} hint={`${s.uniqueGuests} guests; repeat = 2+ visits`} />
+        <StatCard label={t("Cancellation rate")} value={`${s.cancellationRate}%`} tone="red" hint={`${s.cancelled} ${t("cancelled")}`} />
+        <StatCard label={t("No-show rate")} value={`${s.noShowRate}%`} tone="red" hint={`${s.noShows} ${t("of non-cancelled")}`} />
+        <StatCard label={t("Repeat guest rate")} value={`${s.repeatCustomerRate}%`} hint={`${s.uniqueGuests} ${t("guests; repeat = 2+ visits")}`} />
         <StatCard label={t("Recorded payments")} value={formatMoney(r.payments.net)} tone="slate" hint={t("deposits/fees net of refunds")} />
         <StatCard label={t("POS revenue")} value="—" tone="slate" hint={t("Pending FoodStory integration — not estimated")} />
       </div>

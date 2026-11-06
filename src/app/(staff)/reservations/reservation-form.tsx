@@ -118,7 +118,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
       };
       const res = isEdit ? await updateReservationAction(payload) : await createReservationAction(payload);
       if (!res.ok) {
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
       toast.success(isEdit ? t("Reservation updated") : `Reservation ${"reference" in res.data ? res.data.reference : ""} created`);

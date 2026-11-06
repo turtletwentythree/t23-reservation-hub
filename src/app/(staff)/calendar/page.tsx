@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getStaffT } from "@/lib/i18n/staff-server";
+import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +15,7 @@ export const metadata = { title: "Calendar" };
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { t } = await getStaffT();
+  const { t, locale } = await getStaffT();
   const ctx = await requireStaff("reservation.view", "calendar");
   const sp = await searchParams;
   const view = (pickParam(sp.view) ?? "month") as "month" | "week" | "day";
@@ -33,7 +34,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     end = addDays(lastDay, 6 - dayOfWeek(lastDay));
     prev = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
     next = nextFirst;
-    title = new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+    title = new Date(Date.UTC(y, m - 1, 1)).toLocaleString(STAFF_DATE_LOCALES[locale], { month: "long", year: "numeric", timeZone: "UTC" });
   } else if (view === "week") {
     start = addDays(anchor, -dayOfWeek(anchor));
     end = addDays(start, 6);
@@ -71,7 +72,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           <div className="flex items-center gap-2">
             <div className="flex rounded-lg border bg-white p-0.5">
               {(["month", "week", "day"] as const).map((v) => (
-                <Link key={v} href={link(v, anchor)} className={cn("rounded-md px-3 py-1 text-sm capitalize", view === v ? "bg-brand-500 text-white" : "text-slate-600")}>{v}</Link>
+                <Link key={v} href={link(v, anchor)} className={cn("rounded-md px-3 py-1 text-sm capitalize", view === v ? "bg-brand-500 text-white" : "text-slate-600")}>{t(v === "month" ? "Month" : v === "week" ? "Week" : "Day")}</Link>
               ))}
             </div>
             <Button asChild variant="outline" size="icon"><Link href={link(view, prev)} aria-label={t("Previous")}><ChevronLeft /></Link></Button>
@@ -84,7 +85,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
       {view === "month" ? (
         <div className="grid grid-cols-7 overflow-hidden rounded-xl border bg-white">
-          {DOW.map((d) => <div key={d} className="border-b bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-500">{d}</div>)}
+          {DOW.map((d) => <div key={d} className="border-b bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-500">{t(d)}</div>)}
           {days.map((d) => {
             const list = (byDay.get(d) ?? []).filter((r) => r.status !== "cancelled" && r.status !== "no_show");
             const inMonth = d.slice(0, 7) === anchor.slice(0, 7);
@@ -93,8 +94,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 <span className={cn("inline-flex size-6 items-center justify-center rounded-full text-xs", d === today && "bg-accent-500 font-bold text-white")}>{Number(d.slice(8))}</span>
                 {list.length ? (
                   <div className="mt-1 space-y-0.5 text-xs">
-                    <p className="font-semibold text-brand-700">{list.length} bookings</p>
-                    <p className="text-muted">{list.reduce((a, r) => a + r.party_size, 0)} covers</p>
+                    <p className="font-semibold text-brand-700">{list.length} {t("bookings")}</p>
+                    <p className="text-muted">{list.reduce((a, r) => a + r.party_size, 0)} {t("covers")}</p>
                   </div>
                 ) : null}
               </Link>
@@ -105,7 +106,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <div className="grid gap-2 md:grid-cols-7">
           {days.map((d) => (
             <Card key={d} className="min-h-40 p-2">
-              <Link href={link("day", d)} className={cn("mb-2 block text-sm font-semibold", d === today && "text-accent-600")}>{DOW[dayOfWeek(d)]} {d.slice(5)}</Link>
+              <Link href={link("day", d)} className={cn("mb-2 block text-sm font-semibold", d === today && "text-accent-600")}>{t(DOW[dayOfWeek(d)])} {d.slice(5)}</Link>
               <div className="space-y-1">
                 {(byDay.get(d) ?? []).map((r) => (
                   <Link key={r.id} href={`/reservations/${r.id}`} className="block rounded border-l-4 bg-slate-50 px-1.5 py-1 text-xs hover:bg-slate-100" style={{ borderColor: STATUS_META[r.status].color }}>
@@ -129,7 +130,7 @@ async function DayTimeline({ rows, names, multi }: { rows: { id: string; restaur
   const startH = 10, endH = 24, span = (endH - startH) * 60;
   const lanes = new Map<string, typeof rows>();
   for (const r of rows) {
-    const key = `${multi ? names.get(r.restaurant_id) + " · " : ""}${r.reservation_tables.map((t) => t.tables?.label).join("+") || "Unassigned"}`;
+    const key = `${multi ? names.get(r.restaurant_id) + " · " : ""}${r.reservation_tables.map((t) => t.tables?.label).join("+") || t("Unassigned")}`;
     lanes.set(key, [...(lanes.get(key) ?? []), r]);
   }
   const sorted = [...lanes.entries()].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));

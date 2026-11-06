@@ -71,7 +71,7 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
                     const reason = window.prompt(t("Reason")) ?? "";
                     start(async () => {
                       const res = await recordRefundAction({ payment_id: p.id, amount: Number(amt), reason });
-                      if (res.ok) { toast.success(res.data.message); router.refresh(); } else toast.error(res.error);
+                      if (res.ok) { toast.success(res.data.message); router.refresh(); } else toast.error(t(res.error));
                     });
                   }}
                 >
@@ -126,7 +126,7 @@ export function PaymentPanel({ reservationId, currency, deposit, payments, canRe
                 const res = isGateway
                   ? await createPaymentLinkAction({ reservation_id: reservationId, kind: form.kind, amount: form.amount, provider: form.provider })
                   : await recordPaymentAction({ reservation_id: reservationId, ...form });
-                if (res.ok) { toast.success(isGateway ? t("Payment link created") : t("Payment recorded")); router.refresh(); } else toast.error(res.error);
+                if (res.ok) { toast.success(isGateway ? t("Payment link created") : t("Payment recorded")); router.refresh(); } else toast.error(t(res.error));
               })
             }
           >

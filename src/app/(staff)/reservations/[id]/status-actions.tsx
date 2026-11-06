@@ -29,7 +29,7 @@ export function StatusActions({ id, status, canDelete }: { id: string; status: R
       if (res.ok) {
         toast.success(`Marked ${t(STATUS_META[to].label)}`);
         router.refresh();
-      } else toast.error(res.error);
+      } else toast.error(t(res.error));
     });
 
   return (
@@ -57,7 +57,7 @@ export function StatusActions({ id, status, canDelete }: { id: string; status: R
               if (!window.confirm(t("Permanently delete this reservation? Prefer cancelling — deletion removes its history."))) return;
               const res = await deleteReservationAction(id);
               if (res.ok) router.push("/reservations");
-              else toast.error(res.error);
+              else toast.error(t(res.error));
             })
           }
         >

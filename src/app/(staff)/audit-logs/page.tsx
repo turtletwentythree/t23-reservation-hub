@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/auth/session";
 import { getStaffT } from "@/lib/i18n/staff-server";
+import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam } from "@/lib/data/common";
 import { Badge, PageHeader } from "@/components/ui/card";
@@ -11,7 +12,7 @@ export const metadata = { title: "Audit logs" };
 const ENTITIES = ["reservations", "customers", "customer_consents", "restaurants", "tables", "booking_policies", "operating_hours", "user_roles", "restaurant_user_access", "payments", "refunds", "waitlists", "integrations", "api_keys", "webhook_endpoints", "data_subject_requests", "notification_templates"];
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { t } = await getStaffT();
+  const { t, locale } = await getStaffT();
   await requireStaff("audit.view", "audit-logs");
   const sp = await searchParams;
   const entity = pickParam(sp.entity) ?? "";
@@ -30,7 +31,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       <PageHeader title={t("Audit logs")} description={t("Every create, update and delete on key records — written by database triggers, not the app.")} />
       <form className="mb-4 flex flex-wrap gap-2">
         <Select name="entity" defaultValue={entity} className="w-56"><option value="">{t("All records")}</option>{ENTITIES.map((e) => <option key={e} value={e}>{e}</option>)}</Select>
-        <Select name="action" defaultValue={action} className="w-40"><option value="">{t("All actions")}</option>{["insert", "update", "delete", "merge", "grant_access", "revoke_access"].map((a) => <option key={a}>{a}</option>)}</Select>
+        <Select name="action" defaultValue={action} className="w-40"><option value="">{t("All actions")}</option>{["insert", "update", "delete", "merge", "grant_access", "revoke_access"].map((a) => <option key={a} value={a}>{t(a)}</option>)}</Select>
         <Input type="date" name="date" defaultValue={date} className="w-40" />
         <Button variant="outline">{t("Filter")}</Button>
       </form>
@@ -39,15 +40,15 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <tbody>
           {(data ?? []).map((l) => (
             <tr key={l.id}>
-              <Td className="whitespace-nowrap text-xs">{new Date(l.created_at).toLocaleString("en-GB", { timeZone: "Asia/Bangkok" })}</Td>
+              <Td className="whitespace-nowrap text-xs">{new Date(l.created_at).toLocaleString(STAFF_DATE_LOCALES[locale], { timeZone: "Asia/Bangkok" })}</Td>
               <Td className="text-xs">{l.actor_id ? who.get(l.actor_id) ?? "staff" : <span className="text-muted">{l.actor_label ?? "system"}</span>}</Td>
-              <Td><Badge tone={l.action === "delete" ? "red" : l.action === "insert" ? "green" : "slate"}>{l.action}</Badge></Td>
+              <Td><Badge tone={l.action === "delete" ? "red" : l.action === "insert" ? "green" : "slate"}>{t(l.action)}</Badge></Td>
               <Td className="text-xs">{l.entity_type}<div className="font-mono text-[10px] text-muted">{l.entity_id?.slice(0, 8)}</div></Td>
               <Td className="text-xs">{l.restaurant_id ? rest.get(l.restaurant_id) ?? "—" : "—"}</Td>
               <Td className="max-w-md text-xs">
                 {l.action === "update" && l.new_data ? Object.entries(l.new_data as Record<string, unknown>).slice(0, 6).map(([k, v]) => (
                   <div key={k}><span className="font-medium">{k}</span>: {JSON.stringify((l.old_data as Record<string, unknown>)?.[k])} → {JSON.stringify(v)}</div>
-                )) : <span className="text-muted">{l.action === "insert" ? "created" : l.action === "delete" ? "deleted" : JSON.stringify(l.new_data)?.slice(0, 120)}</span>}
+                )) : <span className="text-muted">{l.action === "insert" ? t("created") : l.action === "delete" ? t("deleted") : JSON.stringify(l.new_data)?.slice(0, 120)}</span>}
               </Td>
             </tr>
           ))}

@@ -18,7 +18,7 @@ export function BookingTypes({ restaurantId, types, currency, readOnly }: { rest
   const save = (fd: FormData, id?: string) =>
     start(async () => {
       const res = await saveBookingTypeAction(restaurantId, { ...Object.fromEntries(fd), id });
-      if (res.ok) { toast.success(t("Saved")); router.refresh(); } else toast.error(res.error);
+      if (res.ok) { toast.success(t("Saved")); router.refresh(); } else toast.error(t(res.error));
     });
   return (
     <div className="space-y-3">

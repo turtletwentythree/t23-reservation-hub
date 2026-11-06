@@ -32,7 +32,7 @@ export function PageAccessMatrix({ possible, current }: {
       if (r.ok) {
         toast.success(t("Saved"));
         router.refresh();
-      } else toast.error(r.error);
+      } else toast.error(t(r.error));
     });
 
   return (

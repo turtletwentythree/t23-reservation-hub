@@ -19,7 +19,7 @@ export function CustomerForm({ customer, readOnly }: { customer?: Customer; read
       action={(fd) =>
         start(async () => {
           const r = await saveCustomerAction(c?.id ?? null, Object.fromEntries(fd));
-          if (!r.ok) return void toast.error(r.error);
+          if (!r.ok) return void toast.error(t(r.error));
           toast.success(t("Guest saved"));
           if (!c) router.push(`/customers/${r.data.id}`);
           router.refresh();

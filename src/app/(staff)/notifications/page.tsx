@@ -64,11 +64,11 @@ export default async function NotificationsPage({ searchParams }: { searchParams
               {(logs ?? []).map((l) => (
                 <tr key={l.id}>
                   <Td className="whitespace-nowrap text-xs">{new Date(l.created_at).toLocaleString("en-GB", { timeZone: "Asia/Bangkok" })}</Td>
-                  <Td>{l.event.replace(/_/g, " ")}</Td>
+                  <Td>{t(l.event)}</Td>
                   <Td>{l.channel}</Td>
                   <Td className="text-xs">{l.recipient}</Td>
                   <Td>
-                    <Badge tone={l.status === "sent" ? "green" : l.status === "not_configured" ? "slate" : l.status === "failed" ? "red" : "yellow"}>{l.status.replace("_", " ")}</Badge>
+                    <Badge tone={l.status === "sent" ? "green" : l.status === "not_configured" ? "slate" : l.status === "failed" ? "red" : "yellow"}>{t(l.status)}</Badge>
                     {l.error ? <p className="mt-1 max-w-xs text-xs text-muted">{l.error}</p> : null}
                   </Td>
                   <Td className="tabular-nums">{l.attempts}</Td>
@@ -97,7 +97,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             <tbody>
               {(templates ?? []).map((tpl) => (
                 <tr key={tpl.id}>
-                  <Td>{tpl.event.replace(/_/g, " ")} {tpl.is_active ? null : <Badge>{t("inactive")}</Badge>}</Td>
+                  <Td>{t(tpl.event)} {tpl.is_active ? null : <Badge>{t("inactive")}</Badge>}</Td>
                   <Td>{tpl.channel}</Td>
                   <Td>{tpl.locale}</Td>
                   <Td className="text-xs">{tpl.restaurant_id ? t("Restaurant") : t("Group default")}</Td>

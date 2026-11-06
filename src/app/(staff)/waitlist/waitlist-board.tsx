@@ -34,7 +34,7 @@ export function WaitlistBoard({ restaurantId, entries, freeTables, canWrite }: {
             action={(fd) =>
               start(async () => {
                 const r = await addToWaitlistAction({ ...Object.fromEntries(fd), restaurant_id: restaurantId });
-                if (r.ok) { toast.success(`Queue number #${r.data.queue_number}`); router.refresh(); } else toast.error(r.error);
+                if (r.ok) { toast.success(`Queue number #${r.data.queue_number}`); router.refresh(); } else toast.error(t(r.error));
               })
             }
           >

@@ -16,7 +16,7 @@ export function RetryNotificationButton({ id }: { id: string }) {
       onClick={() =>
         start(async () => {
           const res = await retryNotificationAction(id);
-          if (!res.ok) toast.error(res.error);
+          if (!res.ok) toast.error(t(res.error));
           else if (res.data.status === "sent") toast.success(t("Sent"));
           else toast.warning(`Result: ${res.data.status.replace("_", " ")}`);
           router.refresh();
