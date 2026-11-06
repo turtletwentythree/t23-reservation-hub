@@ -40,7 +40,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
         today={today}
         maxDate={addDays(today, policy?.max_advance_days ?? 60)}
         minParty={policy?.min_party_size ?? 1}
-        maxParty={Math.min(policy?.max_party_size ?? 8, 20)}
+        maxParty={policy?.max_party_size ?? 8}
         deposit={{ type: policy?.deposit_type ?? "none", amount: Number(policy?.deposit_amount ?? 0), minParty: policy?.deposit_min_party_size ?? 1 }}
         policyText={(policy?.cancellation_policy as Record<string, string>) ?? {}}
         termsText={(policy?.booking_terms as Record<string, string>) ?? {}}

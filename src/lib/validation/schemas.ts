@@ -55,7 +55,7 @@ export const publicBookingSchema = z.object({
   restaurant_slug: z.string().regex(/^[a-z0-9-]+$/),
   reservation_date: dateString,
   reservation_time: timeString,
-  party_size: z.coerce.number().int().min(1).max(50),
+  party_size: z.coerce.number().int().min(1).max(200),
   booking_type_id: z.string().uuid().optional().or(z.literal("").transform(() => undefined)),
   customer_name: z.string().trim().min(2).max(120),
   phone: phoneString,

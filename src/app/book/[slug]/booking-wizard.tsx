@@ -31,6 +31,9 @@ function addDays(date: string, n: number) {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
+/** Party sizes shown as buttons; larger sizes up to the restaurant maximum are in a dropdown. */
+const BUTTON_LIMIT = 12;
+
 export function BookingWizard(p: Props) {
   const [locale, setLocale] = useState<Locale>(p.initialLocale);
   const t = DICTIONARIES[locale];
@@ -94,9 +97,20 @@ export function BookingWizard(p: Props) {
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><Users className="size-4 text-brand-600" /> {t.guests}</p>
             <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: p.maxParty - p.minParty + 1 }, (_, i) => p.minParty + i).map((n) => (
+              {Array.from({ length: Math.max(0, Math.min(p.maxParty, BUTTON_LIMIT) - p.minParty + 1) }, (_, i) => p.minParty + i).map((n) => (
                 <button key={n} type="button" onClick={() => setParty(n)} className={cn("size-11 rounded-xl border text-sm font-medium", party === n ? "border-brand-500 bg-brand-500 text-white" : "bg-white hover:border-brand-300")}>{n}</button>
               ))}
+              {p.maxParty > BUTTON_LIMIT ? (
+                <select
+                  aria-label={t.guests}
+                  value={party > BUTTON_LIMIT ? party : ""}
+                  onChange={(e) => e.target.value && setParty(Number(e.target.value))}
+                  className={cn("h-11 rounded-xl border px-3 text-sm font-medium", party > BUTTON_LIMIT ? "border-brand-500 bg-brand-500 text-white" : "bg-white")}
+                >
+                  <option value="">{BUTTON_LIMIT + 1}+</option>
+                  {Array.from({ length: p.maxParty - Math.max(BUTTON_LIMIT, p.minParty - 1) }, (_, i) => Math.max(BUTTON_LIMIT, p.minParty - 1) + 1 + i).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              ) : null}
             </div>
             <p className="mt-1.5 text-xs text-muted">{t.maxParty.replace("{n}", String(p.maxParty))} {t.largeParty}</p>
           </section>
