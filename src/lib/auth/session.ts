@@ -14,7 +14,10 @@ export type StaffContext = {
   fullName: string;
   role: AppRole;
   organizationId: string;
+  /** Active restaurants this user may see. Drives branch pickers and operational pages. */
   restaurants: Pick<Restaurant, "id" | "name" | "slug" | "is_active" | "timezone" | "currency">[];
+  /** Every restaurant this user may see, including inactive ones (for admin and permission checks). */
+  allRestaurants: Pick<Restaurant, "id" | "name" | "slug" | "is_active" | "timezone" | "currency">[];
   /** Restaurant ids the current branch filter resolves to (all accessible ones when "all"). */
   branchIds: string[];
   selectedBranch: string; // restaurant id or "all"
@@ -36,7 +39,9 @@ export const getStaffContext = cache(async (): Promise<StaffContext | null> => {
   ]);
   if (!profile?.is_active || !roleRow) return null;
 
-  const list = restaurants ?? [];
+  const all = restaurants ?? [];
+  // Inactive restaurants are hidden from day-to-day screens but stay editable in Restaurants.
+  const list = all.filter((r) => r.is_active);
   const cookieStore = await cookies();
   const requested = cookieStore.get(BRANCH_COOKIE)?.value ?? "all";
   const selected = requested !== "all" && list.some((r) => r.id === requested) ? requested : list.length === 1 ? list[0].id : "all";
@@ -48,6 +53,7 @@ export const getStaffContext = cache(async (): Promise<StaffContext | null> => {
     role: roleRow.role,
     organizationId: roleRow.organization_id,
     restaurants: list,
+    allRestaurants: all,
     branchIds: selected === "all" ? list.map((r) => r.id) : [selected],
     selectedBranch: selected,
   };
@@ -66,7 +72,7 @@ export async function assertPermission(permission: Permission, restaurantId?: st
   const ctx = await getStaffContext();
   if (!ctx) throw new AuthorizationError("Please sign in again.");
   if (!roleCan(ctx.role, permission)) throw new AuthorizationError();
-  if (restaurantId && !ctx.restaurants.some((r) => r.id === restaurantId)) {
+  if (restaurantId && !ctx.allRestaurants.some((r) => r.id === restaurantId)) {
     throw new AuthorizationError("You do not have access to this restaurant.");
   }
   return ctx;
