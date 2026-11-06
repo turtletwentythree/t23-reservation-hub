@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { CalendarDays, Clock, Users, ChevronLeft } from "lucide-react";
+import { CalendarDays, Clock, Users, ChevronLeft, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
@@ -31,15 +31,18 @@ function addDays(date: string, n: number) {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
-/** Party sizes shown as buttons; larger sizes up to the restaurant maximum are in a dropdown. */
-const BUTTON_LIMIT = 12;
 
 export function BookingWizard(p: Props) {
   const [locale, setLocale] = useState<Locale>(p.initialLocale);
   const t = DICTIONARIES[locale];
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [date, setDate] = useState(p.today);
-  const [party, setParty] = useState(Math.max(2, p.minParty));
+  const [party, setPartyValue] = useState(Math.min(p.maxParty, Math.max(2, p.minParty)));
+  const [partyText, setPartyText] = useState(String(party));
+  const setParty = (n: number) => {
+    setPartyValue(n);
+    setPartyText(String(n));
+  };
   const [typeId, setTypeId] = useState(p.bookingTypes[0]?.id ?? "");
   const [time, setTime] = useState("");
   const [times, setTimes] = useState<string[] | null>(null);
@@ -96,21 +99,44 @@ export function BookingWizard(p: Props) {
         <div className="space-y-5 rounded-2xl border bg-white p-4 shadow-sm">
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><Users className="size-4 text-brand-600" /> {t.guests}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: Math.max(0, Math.min(p.maxParty, BUTTON_LIMIT) - p.minParty + 1) }, (_, i) => p.minParty + i).map((n) => (
-                <button key={n} type="button" onClick={() => setParty(n)} className={cn("size-11 rounded-xl border text-sm font-medium", party === n ? "border-brand-500 bg-brand-500 text-white" : "bg-white hover:border-brand-300")}>{n}</button>
-              ))}
-              {p.maxParty > BUTTON_LIMIT ? (
-                <select
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="−"
+                disabled={party <= p.minParty}
+                onClick={() => setParty(Math.max(p.minParty, party - 1))}
+                className="flex size-12 items-center justify-center rounded-xl border bg-white text-brand-700 hover:border-brand-400 disabled:opacity-30"
+              >
+                <Minus className="size-5" />
+              </button>
+              <label className="flex flex-1 items-baseline justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 py-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
                   aria-label={t.guests}
-                  value={party > BUTTON_LIMIT ? party : ""}
-                  onChange={(e) => e.target.value && setParty(Number(e.target.value))}
-                  className={cn("h-11 rounded-xl border px-3 text-sm font-medium", party > BUTTON_LIMIT ? "border-brand-500 bg-brand-500 text-white" : "bg-white")}
-                >
-                  <option value="">{BUTTON_LIMIT + 1}+</option>
-                  {Array.from({ length: p.maxParty - Math.max(BUTTON_LIMIT, p.minParty - 1) }, (_, i) => Math.max(BUTTON_LIMIT, p.minParty - 1) + 1 + i).map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
-              ) : null}
+                  min={p.minParty}
+                  max={p.maxParty}
+                  value={partyText}
+                  onChange={(e) => {
+                    setPartyText(e.target.value);
+                    const n = Number(e.target.value);
+                    if (Number.isInteger(n) && n >= p.minParty && n <= p.maxParty) setParty(n);
+                  }}
+                  onBlur={() => setPartyText(String(party))}
+                  style={{ width: `${Math.max(1, partyText.length) + 0.6}ch` }}
+                  className="bg-transparent text-center text-3xl font-semibold tabular-nums text-brand-800 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span className="text-sm text-slate-600">{party === 1 ? t.guest : t.guestsPlural}</span>
+              </label>
+              <button
+                type="button"
+                aria-label="+"
+                disabled={party >= p.maxParty}
+                onClick={() => setParty(Math.min(p.maxParty, party + 1))}
+                className="flex size-12 items-center justify-center rounded-xl border bg-white text-brand-700 hover:border-brand-400 disabled:opacity-30"
+              >
+                <Plus className="size-5" />
+              </button>
             </div>
             <p className="mt-1.5 text-xs text-muted">{t.maxParty.replace("{n}", String(p.maxParty))} {t.largeParty}</p>
           </section>
