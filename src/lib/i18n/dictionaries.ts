@@ -1,5 +1,6 @@
 export type Locale = "en" | "th" | "ja" | "fr";
-export const LOCALES: Locale[] = ["en", "th", "ja", "fr"];
+/** Languages offered to guests. "ja" stays in the type so older records still render, but is not offered. */
+export const LOCALES: Locale[] = ["en", "th", "fr"];
 export const LOCALE_NAMES: Record<Locale, string> = { en: "English", th: "ไทย", ja: "日本語", fr: "Français" };
 /** BCP 47 tags for date formatting. */
 export const DATE_LOCALES: Record<Locale, string> = { en: "en-GB", th: "th-TH", ja: "ja-JP", fr: "fr-FR" };
@@ -226,7 +227,6 @@ export function resolveLocale(v: string | null | undefined, acceptLanguage?: str
   if (v && LOCALES.includes(v as Locale)) return v as Locale;
   const al = (acceptLanguage ?? "").toLowerCase();
   if (al.startsWith("th")) return "th";
-  if (al.startsWith("ja")) return "ja";
   if (al.startsWith("fr")) return "fr";
   return "en";
 }

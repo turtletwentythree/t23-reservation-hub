@@ -21,11 +21,10 @@ export function BookingTypes({ restaurantId, types, currency, readOnly }: { rest
   return (
     <div className="space-y-3">
       {types.map((t) => (
-        <form key={t.id} action={(fd) => save(fd, t.id)} className="grid grid-cols-2 items-end gap-2 rounded-lg border p-3 sm:grid-cols-4 lg:grid-cols-8">
+        <form key={t.id} action={(fd) => save(fd, t.id)} className="grid grid-cols-2 items-end gap-2 rounded-lg border p-3 sm:grid-cols-4 lg:grid-cols-7">
           <fieldset disabled={readOnly || pending} className="contents">
             <Field label="Name (EN)"><Input name="name_en" defaultValue={t.name.en} /></Field>
             <Field label="ไทย"><Input name="name_th" defaultValue={t.name.th} /></Field>
-            <Field label="日本語"><Input name="name_ja" defaultValue={t.name.ja} /></Field>
             <Field label="Français"><Input name="name_fr" defaultValue={t.name.fr} /></Field>
             <Field label={`Price (${currency})`}><Input name="price" type="number" defaultValue={t.price ?? ""} /></Field>
             <Field label="Duration (min)"><Input name="duration_minutes" type="number" defaultValue={t.duration_minutes ?? ""} /></Field>

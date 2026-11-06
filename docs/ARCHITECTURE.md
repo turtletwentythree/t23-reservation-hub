@@ -67,7 +67,7 @@ t23-reservation-hub/
 │  │  ├─ (staff)/…           dashboard, reservations, calendar, floor-plan, waitlist,
 │  │  │                      customers, reports, restaurants, integrations, users,
 │  │  │                      settings, audit-logs
-│  │  ├─ book/[slug]         public booking engine (mobile-first, TH/EN/JA/FR, embeddable)
+│  │  ├─ book/[slug]         public booking engine (mobile-first, TH/EN/FR, embeddable)
 │  │  ├─ reservation/[ref]   guest view / modify / cancel / QR
 │  │  └─ api/                v1 REST, webhooks, cron, exports
 │  ├─ components/            ui primitives, layout, feature components
@@ -138,7 +138,7 @@ Helper functions in a non-exposed `private` schema (SECURITY DEFINER, `search_pa
 |---|---|---|
 | 1 Foundation | Next.js app, Supabase local stack, migrations, auth, RBAC + RLS, multi-branch switcher, restaurants & user management, seed | Login works; users see only assigned branches (tested); admin creates restaurants |
 | 2 Reservation core | Booking CRUD, statuses, history, audit, availability engine, table assignment, floor plan editor, calendar | Conflicting booking rejected by DB; engine unit-tested |
-| 3 Customer experience | Public booking (TH/EN/JA/FR), manage/cancel link, QR, embed, CRM, walk-in, waitlist | Mobile booking end-to-end; guest history retained |
+| 3 Customer experience | Public booking (TH/EN/FR), manage/cancel link, QR, embed, CRM, walk-in, waitlist | Mobile booking end-to-end; guest history retained |
 | 4 Operations | Notification center + adapters + retries, deposits, payments, refunds, policies | No fake deliveries; payments recorded via adapters |
 | 5 Analytics & integration | Reports + CSV/Excel export, REST API, webhooks, LINE, FoodStory (pending) | KPIs computed from DB records |
 | 6 Production | Security review, load test, Vercel deploy, backups, monitoring, UAT | Deployed, documented |

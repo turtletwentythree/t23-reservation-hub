@@ -292,7 +292,6 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
           <Select value={v.language} onChange={(e) => set("language", e.target.value as "en")}>
             <option value="en">English</option>
             <option value="th">ไทย</option>
-            <option value="ja">日本語</option>
             <option value="fr">Français</option>
           </Select>
         </Field>

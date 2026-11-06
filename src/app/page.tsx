@@ -23,7 +23,7 @@ export default async function Home() {
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-16">
         <h1 className="mt-6 text-3xl font-semibold text-slate-900 sm:text-4xl">Reserve a table</h1>
-        <p className="mt-2 text-slate-600">Choose a restaurant to see real-time availability. · เลือกร้านอาหาร · レストランを選択</p>
+        <p className="mt-2 text-slate-600">Choose a restaurant to see real-time availability. · เลือกร้านอาหาร · Choisissez un restaurant</p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(restaurants ?? []).map((r) => (
             <Link key={r.slug} href={`/book/${r.slug}`} className="group rounded-2xl border bg-white p-5 shadow-xs transition hover:border-brand-300 hover:shadow-md">
