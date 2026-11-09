@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
-import { Sidebar } from "./sidebar";
+import { Sidebar, type NavSection } from "./sidebar";
 import { Select } from "@/components/ui/input";
 import { initials } from "@/lib/utils";
 import { setBranchAction, signOutAction } from "@/app/(staff)/actions";
@@ -12,7 +12,7 @@ import { makeT, type StaffLocale } from "@/lib/i18n/staff";
 export function AppShell({ children, items, restaurants, selectedBranch, user, locale }: {
   children: React.ReactNode;
   locale: StaffLocale;
-  items: { href: string; label: string; icon: string }[];
+  items: NavSection[];
   restaurants: { id: string; name: string; is_active: boolean }[];
   selectedBranch: string;
   user: { name: string; email: string; roleLabel: string };

@@ -5,20 +5,29 @@ export type PageKey =
   | "dashboard" | "reservations" | "calendar" | "floor-plan" | "waitlist" | "customers" | "notifications"
   | "reports" | "restaurants" | "integrations" | "users" | "settings" | "audit-logs";
 
-export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: string; permission: Permission }[] = [
-  { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", permission: "dashboard.view" },
-  { key: "reservations", href: "/reservations", label: "Reservations", icon: "BookOpen", permission: "reservation.view" },
-  { key: "calendar", href: "/calendar", label: "Calendar", icon: "CalendarDays", permission: "reservation.view" },
-  { key: "floor-plan", href: "/floor-plan", label: "Floor Plan", icon: "LayoutGrid", permission: "reservation.view" },
-  { key: "waitlist", href: "/waitlist", label: "Waitlist", icon: "ListOrdered", permission: "reservation.view" },
-  { key: "customers", href: "/customers", label: "Customers", icon: "Users", permission: "customer.view" },
-  { key: "notifications", href: "/notifications", label: "Notifications", icon: "Bell", permission: "notification.view" },
-  { key: "reports", href: "/reports", label: "Reports", icon: "BarChart3", permission: "report.view" },
-  { key: "restaurants", href: "/restaurants", label: "Restaurants", icon: "Store", permission: "reservation.view" },
-  { key: "integrations", href: "/integrations", label: "Integrations", icon: "Plug", permission: "integration.view" },
-  { key: "users", href: "/users", label: "User Management", icon: "UserCog", permission: "user.manage" },
-  { key: "settings", href: "/settings", label: "Settings", icon: "Settings", permission: "settings.manage" },
-  { key: "audit-logs", href: "/audit-logs", label: "Audit Logs", icon: "ScrollText", permission: "audit.view" },
+/** Menu sections: front of house (service floor), back office (management), system admin. */
+export type NavGroup = "front" | "back" | "admin";
+
+export const NAV_GROUPS: { key: NavGroup; label: string }[] = [
+  { key: "front", label: "Front of house" },
+  { key: "back", label: "Back office" },
+  { key: "admin", label: "System admin" },
+];
+
+export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: string; permission: Permission; group: NavGroup }[] = [
+  { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", permission: "dashboard.view", group: "front" },
+  { key: "reservations", href: "/reservations", label: "Reservations", icon: "BookOpen", permission: "reservation.view", group: "front" },
+  { key: "calendar", href: "/calendar", label: "Calendar", icon: "CalendarDays", permission: "reservation.view", group: "front" },
+  { key: "floor-plan", href: "/floor-plan", label: "Floor Plan", icon: "LayoutGrid", permission: "reservation.view", group: "front" },
+  { key: "waitlist", href: "/waitlist", label: "Waitlist", icon: "ListOrdered", permission: "reservation.view", group: "front" },
+  { key: "customers", href: "/customers", label: "Customers", icon: "Users", permission: "customer.view", group: "back" },
+  { key: "reports", href: "/reports", label: "Reports", icon: "BarChart3", permission: "report.view", group: "back" },
+  { key: "notifications", href: "/notifications", label: "Notifications", icon: "Bell", permission: "notification.view", group: "back" },
+  { key: "restaurants", href: "/restaurants", label: "Restaurants", icon: "Store", permission: "reservation.view", group: "back" },
+  { key: "integrations", href: "/integrations", label: "Integrations", icon: "Plug", permission: "integration.view", group: "back" },
+  { key: "users", href: "/users", label: "User Management", icon: "UserCog", permission: "user.manage", group: "admin" },
+  { key: "settings", href: "/settings", label: "Settings", icon: "Settings", permission: "settings.manage", group: "admin" },
+  { key: "audit-logs", href: "/audit-logs", label: "Audit Logs", icon: "ScrollText", permission: "audit.view", group: "admin" },
 ];
 
 /** Roles whose pages an Admin can switch on and off. Admin itself always sees every page. */

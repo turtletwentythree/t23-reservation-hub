@@ -27,6 +27,9 @@ const T: Record<string, Entry> = {
   "User Management": { th: "จัดการผู้ใช้", fr: "Utilisateurs" },
   Settings: { th: "ตั้งค่า", fr: "Paramètres" },
   "Audit Logs": { th: "บันทึกการแก้ไข", fr: "Journal d'audit" },
+  "Front of house": { th: "หน้าบ้าน", fr: "Salle" },
+  "Back office": { th: "หลังบ้าน", fr: "Gestion" },
+  "System admin": { th: "ผู้ดูแลระบบ", fr: "Administration" },
 
   // Shell
   Branch: { th: "สาขา", fr: "Établissement" },
