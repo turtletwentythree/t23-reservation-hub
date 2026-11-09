@@ -2,7 +2,7 @@ import { roleCan, type Permission } from "@/lib/auth/permissions";
 import type { AppRole } from "@/lib/supabase/types";
 
 export type PageKey =
-  | "dashboard" | "reservations" | "calendar" | "floor-plan" | "waitlist" | "customers" | "notifications"
+  | "dashboard" | "requests" | "availability" | "reservations" | "calendar" | "floor-plan" | "waitlist" | "customers" | "notifications"
   | "reports" | "restaurants" | "integrations" | "users" | "settings" | "audit-logs";
 
 /** Menu sections: front of house (service floor), back office (management), system admin. */
@@ -16,6 +16,8 @@ export const NAV_GROUPS: { key: NavGroup; label: string }[] = [
 
 export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: string; permission: Permission; group: NavGroup }[] = [
   { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", permission: "dashboard.view", group: "front" },
+  { key: "requests", href: "/requests", label: "Booking requests", icon: "PhoneCall", permission: "request.create", group: "front" },
+  { key: "availability", href: "/availability", label: "Table availability", icon: "Grid3x3", permission: "availability.view", group: "front" },
   { key: "reservations", href: "/reservations", label: "Reservations", icon: "BookOpen", permission: "reservation.view", group: "front" },
   { key: "calendar", href: "/calendar", label: "Calendar", icon: "CalendarDays", permission: "reservation.view", group: "front" },
   { key: "floor-plan", href: "/floor-plan", label: "Floor Plan", icon: "LayoutGrid", permission: "reservation.view", group: "front" },
@@ -31,7 +33,7 @@ export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: strin
 ];
 
 /** Roles whose pages an Admin can switch on and off. Admin itself always sees every page. */
-export const CONFIGURABLE_ROLES = ["host", "viewer"] as const;
+export const CONFIGURABLE_ROLES = ["host", "call_center", "viewer"] as const;
 export type ConfigurableRole = (typeof CONFIGURABLE_ROLES)[number];
 
 export type PageAccess = Partial<Record<ConfigurableRole, PageKey[]>>;
@@ -54,10 +56,15 @@ export function parsePageAccess(raw: unknown): PageAccess {
 }
 
 /** Pages this role may open, after the Admin's switches. */
+/** Pages a role starts with before the Admin changes anything. */
+export const DEFAULT_PAGES: Partial<Record<AppRole, PageKey[]>> = {
+  call_center: ["requests", "availability", "reservations", "calendar"],
+};
+
 export function allowedPages(role: AppRole, access: PageAccess): PageKey[] {
   const possible = possiblePages(role);
   if (role === "super_admin") return possible;
-  const chosen = (CONFIGURABLE_ROLES as readonly string[]).includes(role) ? access[role as ConfigurableRole] : undefined;
+  const chosen = ((CONFIGURABLE_ROLES as readonly string[]).includes(role) ? access[role as ConfigurableRole] : undefined) ?? DEFAULT_PAGES[role];
   if (!chosen) return possible;
   return possible.filter((k) => chosen.includes(k));
 }

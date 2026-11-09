@@ -27,8 +27,8 @@ export default async function SettingsPage() {
         <CardHeader><CardTitle>{t("Page access by role")}</CardTitle></CardHeader>
         <CardContent>
           <PageAccessMatrix
-            possible={{ host: possiblePages("host"), viewer: possiblePages("viewer") }}
-            current={{ host: allowedPages("host", access), viewer: allowedPages("viewer", access) }}
+            possible={{ host: possiblePages("host"), call_center: possiblePages("call_center"), viewer: possiblePages("viewer") }}
+            current={{ host: allowedPages("host", access), call_center: allowedPages("call_center", access), viewer: allowedPages("viewer", access) }}
           />
         </CardContent>
       </Card>

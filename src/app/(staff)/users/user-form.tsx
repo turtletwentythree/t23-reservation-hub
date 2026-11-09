@@ -10,6 +10,7 @@ import { ASSIGNABLE_ROLES } from "@/lib/auth/permissions";
 const ROLE_HINTS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
   super_admin: "Admin: full access, manages users and settings",
   host: "Store: reservations, walk-ins, waitlist, tables and guests",
+  call_center: "Call Center: takes phone / LINE requests and sends them to the store",
   viewer: "View: read-only",
 };
 import type { AppRole } from "@/lib/supabase/types";
@@ -19,7 +20,7 @@ type U = { id: string; email: string; full_name: string | null; is_active: boole
 
 export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: string; name: string }[] }) {
   const t = useT();
-  const [role, setRole] = useState<AppRole>(user?.role === "super_admin" || user?.role === "host" ? user.role : "viewer");
+  const [role, setRole] = useState<AppRole>(user?.role === "super_admin" || user?.role === "host" || user?.role === "call_center" ? user.role : "viewer");
   const [branches, setBranches] = useState<string[]>(user?.restaurant_ids ?? restaurants.map((r) => r.id));
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -41,7 +42,7 @@ export function UserForm({ user, restaurants }: { user?: U; restaurants: { id: s
       {!user ? <Field label={t("Temporary password (optional)")} hint={t("Leave blank if this person signs in with Microsoft 365 using the same email.")}><Input name="password" type="text" minLength={10} /></Field> : null}
       <Field label={t("Role")}>
         <Select value={role} onChange={(e) => setRole(e.target.value as AppRole)}>
-          {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_HINTS[r]}</option>)}
+          {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{t(ROLE_HINTS[r])}</option>)}
         </Select>
       </Field>
       <div>

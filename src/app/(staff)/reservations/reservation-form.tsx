@@ -14,6 +14,7 @@ import {
   updateReservationAction,
   type SlotView,
 } from "./actions";
+import { linkRequestAction } from "../requests/actions";
 
 export type FormRestaurant = { id: string; name: string };
 export type FormTable = { id: string; label: string; max_capacity: number; restaurant_id: string; area?: string | null };
@@ -45,13 +46,15 @@ export type ReservationFormValues = {
   is_walk_in: boolean;
 };
 
-export function ReservationForm({ restaurants, tables, sources, bookingTypes, initial, onDone }: {
+export function ReservationForm({ restaurants, tables, sources, bookingTypes, initial, onDone, requestId }: {
   restaurants: FormRestaurant[];
   tables: FormTable[];
   sources: FormSource[];
   bookingTypes: FormBookingType[];
   initial: ReservationFormValues;
   onDone?: (id: string) => void;
+  /** When keying in a Call Center request: mark that request as booked once the reservation is saved. */
+  requestId?: string;
 }) {
   const t = useT();
   const router = useRouter();
@@ -121,7 +124,11 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
         toast.error(t(res.error));
         return;
       }
-      toast.success(isEdit ? t("Reservation updated") : `Reservation ${"reference" in res.data ? res.data.reference : ""} created`);
+      if (!isEdit && requestId) {
+        const linked = await linkRequestAction(requestId, res.data.id);
+        if (!linked.ok) toast.error(t(linked.error));
+      }
+      toast.success(isEdit ? t("Reservation updated") : `${t("Reservation created")} ${"reference" in res.data ? res.data.reference : ""}`);
       if (onDone) onDone(res.data.id);
       else router.push(`/reservations/${res.data.id}`);
       router.refresh();

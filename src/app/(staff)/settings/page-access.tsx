@@ -10,6 +10,7 @@ import { savePageAccessAction } from "./actions";
 
 const ROLES: { role: ConfigurableRole; label: string }[] = [
   { role: "host", label: "Store" },
+  { role: "call_center", label: "Call Center" },
   { role: "viewer", label: "View" },
 ];
 

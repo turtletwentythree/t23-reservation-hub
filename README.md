@@ -31,7 +31,7 @@ Built with Next.js 15 (App Router, Server Actions), TypeScript, Tailwind CSS v4,
 
 ## Roles
 
-User management offers three roles: **Admin** (everything), **Store** (front of house: reservations, walk-ins, waitlist, tables, guests; no settings, users or reports) and **View** (read-only). The database still supports the finer-grained roles below (used by the demo seed), but they can no longer be assigned from the app.
+User management offers four roles: **Admin** (everything), **Store** (front of house: reservations, walk-ins, waitlist, tables, guests; no settings, users or reports), **Call Center** (logs phone and LINE booking requests for the store) and **View** (read-only). The database still supports the finer-grained roles below (used by the demo seed), but they can no longer be assigned from the app.
 
 | Role | Scope |
 | --- | --- |
@@ -39,8 +39,15 @@ User management offers three roles: **Admin** (everything), **Store** (front of 
 | Group Manager | Assigned branches: operations, guests, reports, audit log |
 | Restaurant Manager | Assigned branch: operations plus restaurant settings, layout, refunds |
 | Store (host) | Assigned branch: reservations, tables, walk-ins, waitlist, guests |
+| Call Center | Assigned branches: logs booking requests (phone / LINE), sees table availability and reservations; cannot create or change reservations |
 | View | Read-only on assigned branches: dashboard, reservations, guests and reports |
 | Customer | Public booking page and their own manage link only (no staff login) |
+
+### Phone and LINE bookings (interim flow)
+
+1. The Call Center takes the call or LINE message, checks **Table availability** (green = free for that party size, red = full) and logs it in **Booking requests** with the channel (Call or LINE).
+2. Store staff see the waiting count in the menu, open the request and choose **Key into system**. The reservation form opens prefilled, with the source set to Phone or LINE. Saving links the reservation and marks the request as keyed in.
+3. If the slot cannot be booked, the store declines it with a reason. The Call Center sees the status and reason and calls the guest back.
 
 Permissions are enforced three times: Zod input validation, a server-side permission check in every Server Action and route (`src/lib/auth/permissions.ts`), and Postgres row-level security as the final guard.
 

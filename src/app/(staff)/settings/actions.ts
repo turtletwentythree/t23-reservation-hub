@@ -108,7 +108,7 @@ export async function retentionAction(months: number, dryRun: boolean): Promise<
 export async function savePageAccessAction(raw: unknown): Promise<ActionResult<undefined>> {
   try {
     const ctx = await assertPermission("settings.manage");
-    const shape = z.object({ host: z.array(z.string()).max(20), viewer: z.array(z.string()).max(20) }).parse(raw);
+    const shape = z.object({ host: z.array(z.string()).max(30), call_center: z.array(z.string()).max(30).default([]), viewer: z.array(z.string()).max(30) }).parse(raw);
     const access = parsePageAccess(shape);
     const supabase = await createClient();
     const { error } = await supabase.from("organizations").update({ page_access: access }).eq("id", ctx.organizationId);

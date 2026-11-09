@@ -2,13 +2,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bell, BookOpen, CalendarDays, LayoutDashboard, LayoutGrid, ListOrdered, Plug, ScrollText, Settings, Store, UserCog, Users, X } from "lucide-react";
+import { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/staff-locale";
 
-const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, LayoutDashboard, LayoutGrid, ListOrdered, Plug, ScrollText, Settings, Store, UserCog, Users };
+const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users };
 
-export type NavSection = { label: string; items: { href: string; label: string; icon: string }[] };
+export type NavSection = { label: string; items: { href: string; label: string; icon: string; badge?: number }[] };
 
 export function Sidebar({ items, open, onClose }: { items: NavSection[]; open: boolean; onClose: () => void }) {
   const pathname = usePathname();
@@ -45,6 +45,7 @@ export function Sidebar({ items, open, onClose }: { items: NavSection[]; open: b
                     >
                       {Icon ? <Icon className={cn("size-4", active ? "text-accent-300" : "")} /> : null}
                       {item.label}
+                      {item.badge ? <span className="ml-auto rounded-full bg-accent-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white tabular-nums">{item.badge}</span> : null}
                     </Link>
                   );
                 })}

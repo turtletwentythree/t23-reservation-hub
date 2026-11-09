@@ -7,13 +7,16 @@ import type { AppRole } from "@/lib/supabase/types";
  */
 export const PERMISSIONS = {
   "dashboard.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer"],
-  "reservation.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer"],
+  "reservation.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
+  "availability.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
+  "request.create": ["super_admin", "group_manager", "restaurant_manager", "host", "call_center"],
+  "request.handle": ["super_admin", "group_manager", "restaurant_manager", "host"],
   "reservation.write": ["super_admin", "group_manager", "restaurant_manager", "host"],
   "reservation.delete": ["super_admin"],
   "table.status": ["super_admin", "group_manager", "restaurant_manager", "host"],
   "table.layout": ["super_admin", "restaurant_manager"],
   "waitlist.write": ["super_admin", "group_manager", "restaurant_manager", "host"],
-  "customer.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer"],
+  "customer.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
   "customer.edit": ["super_admin", "group_manager", "restaurant_manager", "host"],
   "customer.privacy": ["super_admin"],
   "report.view": ["super_admin", "group_manager", "restaurant_manager", "viewer"],
@@ -43,13 +46,15 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   restaurant_manager: "Restaurant Manager",
   host: "Store",
   viewer: "View",
+  call_center: "Call Center",
 };
 
 /**
  * Roles that can be given to users from User management:
- * Admin (full access), Store (front of house: runs reservations day to day) and View (read-only).
+ * Admin (full access), Store (front of house: runs reservations day to day),
+ * Call Center (takes phone / LINE requests and hands them to the store) and View (read-only).
  */
-export const ASSIGNABLE_ROLES = ["super_admin", "host", "viewer"] as const;
+export const ASSIGNABLE_ROLES = ["super_admin", "host", "call_center", "viewer"] as const;
 
 export class AuthorizationError extends Error {
   constructor(message = "You do not have permission to do that.") {

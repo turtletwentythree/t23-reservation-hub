@@ -107,6 +107,18 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"booking_requests": {
+                  Row: {
+                    "channel": string,"created_at": string,"created_by": string | null,"customer_name": string,"decline_reason": string | null,"handled_at": string | null,"handled_by": string | null,"id": string,"line_id": string | null,"notes": string | null,"organization_id": string,"party_size": number,"phone": string | null,"requested_date": string,"requested_time": string,"reservation_id": string | null,"restaurant_id": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel"?: string,"created_at"?: string,"created_by"?: string | null,"customer_name": string,"decline_reason"?: string | null,"handled_at"?: string | null,"handled_by"?: string | null,"id"?: string,"line_id"?: string | null,"notes"?: string | null,"organization_id"?: string,"party_size": number,"phone"?: string | null,"requested_date": string,"requested_time": string,"reservation_id"?: string | null,"restaurant_id": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "channel"?: string,"created_at"?: string,"created_by"?: string | null,"customer_name"?: string,"decline_reason"?: string | null,"handled_at"?: string | null,"handled_by"?: string | null,"id"?: string,"line_id"?: string | null,"notes"?: string | null,"organization_id"?: string,"party_size"?: number,"phone"?: string | null,"requested_date"?: string,"requested_time"?: string,"reservation_id"?: string | null,"restaurant_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: []
                 },"booking_sources": {
                   Row: {
                     "code": string,"created_at": string,"id": string,"is_active": boolean,"is_system": boolean,"name": string,"organization_id": string
@@ -971,7 +983,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "super_admin"|"group_manager"|"restaurant_manager"|"host"|"viewer","deposit_type": "none"|"per_person"|"flat"|"full_prepayment","dsr_status": "open"|"in_progress"|"completed"|"rejected","dsr_type": "export"|"deletion"|"rectification","integration_status": "not_configured"|"pending"|"active"|"error"|"disabled","notification_channel": "email"|"sms"|"line"|"whatsapp","notification_event": "booking_confirmation"|"booking_reminder"|"booking_modification"|"booking_cancellation"|"waitlist_ready"|"birthday_campaign","notification_status": "queued"|"sending"|"sent"|"failed"|"not_configured"|"skipped","payment_kind": "deposit"|"prepayment"|"no_show_fee"|"cancellation_fee"|"other","payment_status": "not_required"|"pending"|"paid"|"partially_refunded"|"refunded"|"failed"|"waived","payment_txn_status": "pending"|"succeeded"|"failed"|"cancelled","refund_status": "pending"|"succeeded"|"failed","reservation_status": "pending"|"confirmed"|"arrived"|"seated"|"completed"|"cancelled"|"no_show","table_service_status": "available"|"cleaning"|"out_of_service","table_shape": "rect"|"round"|"square"|"bar","waitlist_status": "waiting"|"notified"|"seated"|"left"|"cancelled"
+            "app_role": "super_admin"|"group_manager"|"restaurant_manager"|"host"|"viewer"|"call_center","deposit_type": "none"|"per_person"|"flat"|"full_prepayment","dsr_status": "open"|"in_progress"|"completed"|"rejected","dsr_type": "export"|"deletion"|"rectification","integration_status": "not_configured"|"pending"|"active"|"error"|"disabled","notification_channel": "email"|"sms"|"line"|"whatsapp","notification_event": "booking_confirmation"|"booking_reminder"|"booking_modification"|"booking_cancellation"|"waitlist_ready"|"birthday_campaign","notification_status": "queued"|"sending"|"sent"|"failed"|"not_configured"|"skipped","payment_kind": "deposit"|"prepayment"|"no_show_fee"|"cancellation_fee"|"other","payment_status": "not_required"|"pending"|"paid"|"partially_refunded"|"refunded"|"failed"|"waived","payment_txn_status": "pending"|"succeeded"|"failed"|"cancelled","refund_status": "pending"|"succeeded"|"failed","reservation_status": "pending"|"confirmed"|"arrived"|"seated"|"completed"|"cancelled"|"no_show","table_service_status": "available"|"cleaning"|"out_of_service","table_shape": "rect"|"round"|"square"|"bar","waitlist_status": "waiting"|"notified"|"seated"|"left"|"cancelled"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1091,7 +1103,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer"],"deposit_type": ["none", "per_person", "flat", "full_prepayment"],"dsr_status": ["open", "in_progress", "completed", "rejected"],"dsr_type": ["export", "deletion", "rectification"],"integration_status": ["not_configured", "pending", "active", "error", "disabled"],"notification_channel": ["email", "sms", "line", "whatsapp"],"notification_event": ["booking_confirmation", "booking_reminder", "booking_modification", "booking_cancellation", "waitlist_ready", "birthday_campaign"],"notification_status": ["queued", "sending", "sent", "failed", "not_configured", "skipped"],"payment_kind": ["deposit", "prepayment", "no_show_fee", "cancellation_fee", "other"],"payment_status": ["not_required", "pending", "paid", "partially_refunded", "refunded", "failed", "waived"],"payment_txn_status": ["pending", "succeeded", "failed", "cancelled"],"refund_status": ["pending", "succeeded", "failed"],"reservation_status": ["pending", "confirmed", "arrived", "seated", "completed", "cancelled", "no_show"],"table_service_status": ["available", "cleaning", "out_of_service"],"table_shape": ["rect", "round", "square", "bar"],"waitlist_status": ["waiting", "notified", "seated", "left", "cancelled"]
+            "app_role": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],"deposit_type": ["none", "per_person", "flat", "full_prepayment"],"dsr_status": ["open", "in_progress", "completed", "rejected"],"dsr_type": ["export", "deletion", "rectification"],"integration_status": ["not_configured", "pending", "active", "error", "disabled"],"notification_channel": ["email", "sms", "line", "whatsapp"],"notification_event": ["booking_confirmation", "booking_reminder", "booking_modification", "booking_cancellation", "waitlist_ready", "birthday_campaign"],"notification_status": ["queued", "sending", "sent", "failed", "not_configured", "skipped"],"payment_kind": ["deposit", "prepayment", "no_show_fee", "cancellation_fee", "other"],"payment_status": ["not_required", "pending", "paid", "partially_refunded", "refunded", "failed", "waived"],"payment_txn_status": ["pending", "succeeded", "failed", "cancelled"],"refund_status": ["pending", "succeeded", "failed"],"reservation_status": ["pending", "confirmed", "arrived", "seated", "completed", "cancelled", "no_show"],"table_service_status": ["available", "cleaning", "out_of_service"],"table_shape": ["rect", "round", "square", "bar"],"waitlist_status": ["waiting", "notified", "seated", "left", "cancelled"]
           }
         }
 } as const
