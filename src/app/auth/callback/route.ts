@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
   const toLogin = (error: string, detail?: string) => {
     const target = new URL(`/login?error=${error}`, url.origin);
     if (detail) target.searchParams.set("detail", detail.slice(0, 200));
-    return NextResponse.redirect(target);
+    const res = NextResponse.redirect(target);
+    // Also keep the message for 10 minutes, so it is still readable if the page is reloaded or redirected.
+    res.cookies.set("auth_error", `${error}|${(detail ?? "").slice(0, 200)}`, { path: "/", maxAge: 600, sameSite: "lax", secure: true });
+    return res;
   };
 
   // Supabase sends ?error=…&error_description=… when the provider step fails.

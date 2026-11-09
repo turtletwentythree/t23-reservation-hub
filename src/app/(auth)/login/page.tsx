@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getStaffContext } from "@/lib/auth/session";
 import { LoginForm } from "./login-form";
 import { getStaffT } from "@/lib/i18n/staff-server";
@@ -9,7 +10,12 @@ export const metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; detail?: string }> }) {
   if (await getStaffContext()) redirect("/dashboard");
-  const { next, error, detail } = await searchParams;
+  const sp = await searchParams;
+  const { next } = sp;
+  // The last sign-in error is also kept in a short-lived cookie, in case the URL was lost.
+  const saved = (await cookies()).get("auth_error")?.value?.split("|");
+  const error = sp.error ?? (saved?.[0] || undefined);
+  const detail = sp.detail ?? (sp.error ? undefined : saved?.slice(1).join("|") || undefined);
   const { locale, t } = await getStaffT();
   return (
     <StaffLocaleProvider locale={locale}>
