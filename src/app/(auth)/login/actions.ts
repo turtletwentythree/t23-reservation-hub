@@ -24,7 +24,10 @@ export async function signInWithMicrosoftAction(formData: FormData) {
     provider: "azure",
     options: { scopes: "email", redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
   });
-  if (error || !data.url) redirect("/login?error=microsoft_unavailable");
+  if (error || !data.url) {
+    console.error("[login] Microsoft sign-in could not start:", error?.message);
+    redirect(`/login?error=microsoft_unavailable${error?.message ? `&detail=${encodeURIComponent(error.message.slice(0, 200))}` : ""}`);
+  }
   redirect(data.url);
 }
 

@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
   const { data: profile } = await supabase.from("users").select("is_active").eq("id", data.user.id).maybeSingle();
   if (!role || !profile?.is_active) {
     await supabase.auth.signOut();
-    return toLogin("not_staff");
+    console.error("[auth/callback] signed in but no staff account for", data.user.email);
+    return toLogin("not_staff", data.user.email ?? undefined);
   }
   return NextResponse.redirect(new URL(next, url.origin));
 }

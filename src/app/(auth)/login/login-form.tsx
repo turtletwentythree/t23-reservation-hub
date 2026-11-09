@@ -6,7 +6,7 @@ import { signInAction, signInWithMicrosoftAction } from "./actions";
 import { useT } from "@/components/staff-locale";
 
 const ERRORS: Record<string, string> = {
-  not_staff: "This Microsoft account does not have access. Ask an Admin to add your email in Users.",
+  not_staff: "This Microsoft account does not have access. Ask an Admin to add this email in User Management",
   microsoft_failed: "Microsoft sign-in did not complete. Please try again.",
   microsoft_unavailable: "Microsoft sign-in is not set up yet. Please use email and password.",
   rate_limited: "Too many attempts. Please wait a few minutes.",

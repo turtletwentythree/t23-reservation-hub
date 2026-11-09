@@ -52,8 +52,8 @@ const T: Record<string, Entry> = {
   "Sign in": { th: "เข้าสู่ระบบ", fr: "Se connecter" },
   "Signing in…": { th: "กำลังเข้าสู่ระบบ…", fr: "Connexion…" },
   "Accounts are created by a T23 administrator.": { th: "บัญชีผู้ใช้สร้างโดยผู้ดูแลระบบ T23", fr: "Les comptes sont créés par un administrateur T23." },
-  "This Microsoft account does not have access. Ask an Admin to add your email in Users.": {
-    th: "บัญชี Microsoft นี้ยังไม่มีสิทธิ์ใช้งาน กรุณาให้ Admin เพิ่มอีเมลของคุณในหน้า Users",
+  "This Microsoft account does not have access. Ask an Admin to add this email in User Management": {
+    th: "บัญชี Microsoft นี้ยังไม่มีสิทธิ์ใช้งาน กรุณาให้ Admin เพิ่มอีเมลนี้ในหน้า จัดการผู้ใช้ (User Management)",
     fr: "Ce compte Microsoft n'a pas accès. Demandez à un Admin d'ajouter votre e-mail dans Utilisateurs.",
   },
   "Microsoft sign-in did not complete. Please try again.": { th: "เข้าสู่ระบบด้วย Microsoft ไม่สำเร็จ กรุณาลองใหม่", fr: "La connexion Microsoft a échoué. Veuillez réessayer." },
