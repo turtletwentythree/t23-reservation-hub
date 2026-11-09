@@ -7,6 +7,19 @@ import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { DomainError } from "@/lib/domain/reservation-service";
 import { inviteUserSchema, updateUserAccessSchema } from "@/lib/validation/schemas";
 
+/** Finds an Authentication login by email (the Auth admin API has no lookup by email, so list the pages). */
+async function findAuthUserByEmail(admin: ReturnType<typeof createAdminClient>, email: string) {
+  const want = email.trim().toLowerCase();
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) return null;
+    const hit = data.users.find((u) => u.email?.toLowerCase() === want);
+    if (hit) return hit;
+    if (data.users.length < 200) return null;
+  }
+  return null;
+}
+
 /**
  * Creates a staff account. Only a Super Admin may call this; the check happens here
  * (server-side) before the service-role client is used for the Auth admin API.
@@ -17,32 +30,46 @@ export async function createUserAction(raw: unknown): Promise<ActionResult<{ id:
     const input = inviteUserSchema.parse(raw);
     const ctx = await assertPermission("user.manage");
     const admin = createAdminClient();
-    const { data, error } = await admin.auth.admin.createUser({
+    const created = await admin.auth.admin.createUser({
       email: input.email,
       // Without a password the account can only sign in with Microsoft 365 (same email).
       password: input.password ?? `${crypto.randomUUID()}${crypto.randomUUID()}`,
       email_confirm: true,
       user_metadata: { full_name: input.full_name },
     });
-    if (error || !data.user) throw new DomainError("validation", error?.message ?? "Could not create user");
+    let userId = created.data.user?.id ?? "";
+    let wasExisting = false;
+    if (created.error || !created.data.user) {
+      const exists = /already (been )?registered|already exists|email_exists/i.test(`${created.error?.message ?? ""} ${(created.error as { code?: string } | null)?.code ?? ""}`);
+      if (!exists) throw new DomainError("validation", created.error?.message ?? "Could not create user");
+      // The login already exists in Authentication (for example from an earlier Microsoft 365 attempt) but has no staff access yet: reuse it.
+      const found = await findAuthUserByEmail(admin, input.email);
+      if (!found) throw new DomainError("validation", created.error?.message ?? "Could not create user");
+      userId = found.id;
+      wasExisting = true;
+      const { data: hasRole } = await createAdminClient().from("user_roles").select("user_id").eq("user_id", found.id).eq("organization_id", ctx.organizationId).maybeSingle();
+      if (hasRole) throw new DomainError("validation", "This email already has access. Find it in the list and press Edit.");
+      // Optional password for the existing login.
+      if (input.password) await admin.auth.admin.updateUserById(found.id, { password: input.password, email_confirm: true });
+    }
     // Make sure the profile row exists (the sign-up trigger can be missing); user_roles points at it.
-    const { error: profileErr } = await admin.from("users").upsert({ id: data.user.id, email: input.email, full_name: input.full_name }, { onConflict: "id" });
+    const { error: profileErr } = await admin.from("users").upsert({ id: userId, email: input.email, full_name: input.full_name }, { onConflict: "id" });
     if (profileErr) {
-      await admin.auth.admin.deleteUser(data.user.id);
+      if (!wasExisting) await admin.auth.admin.deleteUser(userId);
       throw new DomainError("validation", profileErr.message);
     }
     const supabase = await createClient();
-    const { error: roleErr } = await supabase.from("user_roles").insert({ user_id: data.user.id, organization_id: ctx.organizationId, role: input.role });
+    const { error: roleErr } = await supabase.from("user_roles").insert({ user_id: userId, organization_id: ctx.organizationId, role: input.role });
     if (roleErr) {
-      await admin.auth.admin.deleteUser(data.user.id);
+      if (!wasExisting) await admin.auth.admin.deleteUser(userId);
       throw new DomainError("validation", roleErr.message);
     }
-    await supabase.from("users").update({ full_name: input.full_name }).eq("id", data.user.id);
+    await supabase.from("users").update({ full_name: input.full_name }).eq("id", userId);
     if (input.restaurant_ids.length) {
-      await supabase.from("restaurant_user_access").insert(input.restaurant_ids.map((rid) => ({ user_id: data.user!.id, restaurant_id: rid })));
+      await supabase.from("restaurant_user_access").upsert(input.restaurant_ids.map((rid) => ({ user_id: userId, restaurant_id: rid })), { onConflict: "user_id,restaurant_id", ignoreDuplicates: true });
     }
     revalidatePath("/users");
-    return ok({ id: data.user.id });
+    return ok({ id: userId });
   } catch (e) {
     return fail(e);
   }
