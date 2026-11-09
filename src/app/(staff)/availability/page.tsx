@@ -13,6 +13,7 @@ import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LiveRefresh } from "@/components/live-refresh";
 import { cn } from "@/lib/utils";
+import { AutoSubmitForm } from "@/components/auto-submit-form";
 
 export const metadata = { title: "Table availability" };
 
@@ -43,6 +44,23 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
     supabase.from("restaurant_areas").select("id, name, sort_order").eq("restaurant_id", restaurantId).order("sort_order"),
     supabase.from("booking_requests").select("id").eq("restaurant_id", restaurantId).eq("requested_date", date).eq("status", "pending"),
   ]);
+  // Next 14 days from the chosen week start: bookings and guests per day, for the quick date picker.
+  const stripStart = date < today ? date : addDays(date, -Math.min(3, Math.round((Date.parse(date) - Date.parse(today)) / 86_400_000)));
+  const stripDays = Array.from({ length: 14 }, (_, i) => addDays(stripStart, i));
+  const { data: stripRows } = await supabase
+    .from("reservations")
+    .select("reservation_date, party_size")
+    .eq("restaurant_id", restaurantId)
+    .gte("reservation_date", stripDays[0])
+    .lte("reservation_date", stripDays[13])
+    .not("status", "in", "(cancelled,no_show)");
+  const perDay = new Map<string, { b: number; g: number }>();
+  for (const r of stripRows ?? []) {
+    const d = perDay.get(r.reservation_date) ?? { b: 0, g: 0 };
+    d.b += 1;
+    d.g += r.party_size;
+    perDay.set(r.reservation_date, d);
+  }
   const areaName = new Map((areaRows ?? []).map((a) => [a.id, a.name]));
   const areaOrder = new Map((areaRows ?? []).map((a, i) => [a.id, i]));
   const tables = [...config.tables]
@@ -83,7 +101,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         title={`${t("Table availability")} · ${restaurant.name}`}
         description={t("Green: a table is free for this party size. Red: full. Both the Call Center and the store see the same live view.")}
         actions={
-          <form className="flex flex-wrap items-center gap-2">
+          <AutoSubmitForm className="flex flex-wrap items-center gap-2">
             {ctx.restaurants.length > 1 ? (
               <Select name="restaurant" defaultValue={restaurantId} className="w-44" aria-label={t("Restaurant")}>
                 {ctx.restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -95,7 +113,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               <Input type="number" name="party" min={1} max={200} defaultValue={party} className="w-20" />
             </label>
             <Button variant="outline">{t("Show")}</Button>
-          </form>
+          </AutoSubmitForm>
         }
       />
 
@@ -104,6 +122,29 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         <Button asChild size="sm" variant={date === today ? "default" : "outline"}><Link href={link(today)}>{t("Today")}</Link></Button>
         <Button asChild size="sm" variant="outline"><Link href={link(addDays(date, 1))} aria-label={t("Next day")}><ChevronRight /></Link></Button>
         <span className="ml-2 text-sm font-medium text-slate-800">{new Date(`${date}T12:00:00Z`).toLocaleDateString(STAFF_DATE_LOCALES[locale], { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+      </div>
+
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {stripDays.map((d) => {
+          const c = perDay.get(d);
+          const [yy, mm, dd] = d.split("-").map(Number);
+          const dt = new Date(Date.UTC(yy, mm - 1, dd, 12));
+          return (
+            <Link
+              key={d}
+              href={link(d)}
+              className={cn(
+                "min-w-[4.25rem] shrink-0 rounded-lg border px-2 py-1.5 text-center text-xs",
+                d === date ? "border-brand-500 bg-brand-500 text-white" : d < today ? "bg-slate-50 text-slate-400" : "bg-white text-slate-700 hover:border-brand-400",
+              )}
+            >
+              <span className="block">{dt.toLocaleDateString(STAFF_DATE_LOCALES[locale], { weekday: "short", timeZone: "UTC" })}</span>
+              <span className="block text-base font-semibold tabular-nums">{dd}</span>
+              <span className="block text-[10px] opacity-80">{dt.toLocaleDateString(STAFF_DATE_LOCALES[locale], { month: "short", timeZone: "UTC" })}</span>
+              <span className="block text-[10px] tabular-nums opacity-90">{c ? `${c.b} ${t("bookings")} · ${c.g} ${t("guests")}` : "—"}</span>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
