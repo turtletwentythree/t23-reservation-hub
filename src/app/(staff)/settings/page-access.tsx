@@ -14,7 +14,7 @@ const ROLES: { role: ConfigurableRole; label: string }[] = [
   { role: "viewer", label: "View" },
 ];
 
-export function PageAccessMatrix({ possible, current }: { possible: Record<ConfigurableRole, PageKey[]>; current: Record<ConfigurableRole, PageKey[]> }) {
+export function PageAccessMatrix({ possible, current, visible }: { possible: Record<ConfigurableRole, PageKey[]>; current: Record<ConfigurableRole, PageKey[]>; visible?: PageKey[] | null }) {
   const t = useT();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -55,7 +55,7 @@ export function PageAccessMatrix({ possible, current }: { possible: Record<Confi
                   {t(group.label)}
                 </td>
               </tr>,
-              ...NAV_ITEMS.filter((item) => item.group === group.key).map((item) => (
+              ...NAV_ITEMS.filter((item) => item.group === group.key && (!visible || visible.includes(item.key))).map((item) => (
                 <tr key={item.key} className="border-b last:border-0">
                   <td className="py-2 pr-3">{t(item.label)}</td>
                   <td className="py-2 text-center">

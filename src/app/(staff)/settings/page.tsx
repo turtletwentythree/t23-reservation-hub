@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, PageHeader } from "@/components/ui/card";
 import { ApiKeys, Retention, SourceRow, Webhooks } from "./settings-client";
 import { PageAccessMatrix } from "./page-access";
-import { allowedPages, parsePageAccess, possiblePages } from "@/components/layout/nav";
+import { allowedPages, INTERIM_MENU, parsePageAccess, possiblePages } from "@/components/layout/nav";
 
 export const metadata = { title: "Settings" };
 
@@ -28,6 +28,7 @@ export default async function SettingsPage() {
         <CardContent>
           <PageAccessMatrix
             possible={{ host: possiblePages("host"), call_center: possiblePages("call_center"), viewer: possiblePages("viewer") }}
+            visible={INTERIM_MENU}
             current={{ host: allowedPages("host", access), call_center: allowedPages("call_center", access), viewer: allowedPages("viewer", access) }}
           />
         </CardContent>

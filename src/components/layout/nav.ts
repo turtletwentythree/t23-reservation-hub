@@ -37,7 +37,7 @@ export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: strin
  * Interim phone / LINE booking period: only these pages appear in the menu.
  * Other pages still exist (and open by URL for those allowed); set to null to bring the full menu back.
  */
-export const INTERIM_MENU: PageKey[] | null = ["dashboard", "requests", "availability", "reservations", "capacity", "users"];
+export const INTERIM_MENU: PageKey[] | null = ["dashboard", "requests", "availability", "reservations", "capacity", "users", "settings"];
 
 /** Where staff land after signing in. */
 export const HOME_HREF = "/dashboard";

@@ -25,6 +25,12 @@ export async function createUserAction(raw: unknown): Promise<ActionResult<{ id:
       user_metadata: { full_name: input.full_name },
     });
     if (error || !data.user) throw new DomainError("validation", error?.message ?? "Could not create user");
+    // Make sure the profile row exists (the sign-up trigger can be missing); user_roles points at it.
+    const { error: profileErr } = await admin.from("users").upsert({ id: data.user.id, email: input.email, full_name: input.full_name }, { onConflict: "id" });
+    if (profileErr) {
+      await admin.auth.admin.deleteUser(data.user.id);
+      throw new DomainError("validation", profileErr.message);
+    }
     const supabase = await createClient();
     const { error: roleErr } = await supabase.from("user_roles").insert({ user_id: data.user.id, organization_id: ctx.organizationId, role: input.role });
     if (roleErr) {
