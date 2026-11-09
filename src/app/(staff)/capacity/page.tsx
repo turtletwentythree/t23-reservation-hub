@@ -5,7 +5,7 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam, todayIn } from "@/lib/data/common";
-import { loadCapacityMonth } from "@/lib/data/capacity";
+import { loadCapacityMonth, loadZoneMonth } from "@/lib/data/capacity";
 import { shiftMonth } from "@/lib/domain/capacity-check";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export default async function CapacityPage({ searchParams }: { searchParams: Pro
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : today.slice(0, 7);
   const supabase = await createClient();
   const data = await loadCapacityMonth(supabase, restaurantId, month);
+  const zm = await loadZoneMonth(supabase, restaurantId, month, data.config);
   const link = (m: string) => `/capacity?restaurant=${restaurantId}&month=${m}`;
   const monthLabel = new Date(`${month}-01T12:00:00Z`).toLocaleDateString(STAFF_DATE_LOCALES[locale], { month: "long", year: "numeric", timeZone: "UTC" });
 
@@ -46,6 +47,11 @@ export default async function CapacityPage({ searchParams }: { searchParams: Pro
           ) : null
         }
       />
+      {!zm.installed && zm.zones.length ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {t("Zone capacity is not set up yet. Ask the Admin to run the latest database update (zone-capacity.sql) in Supabase.")}
+        </p>
+      ) : null}
       {!data.settings.installed ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {t("Daily capacity is not set up yet. Ask the Admin to run the latest database update (daily-capacity.sql) in Supabase.")}
@@ -62,6 +68,11 @@ export default async function CapacityPage({ searchParams }: { searchParams: Pro
         month={month}
         today={today}
         locale={STAFF_DATE_LOCALES[locale]}
+        zones={zm.zones.map((z) => ({ id: z.id, name: z.name, defaultCapacity: z.defaultCapacity, tableSeats: z.tableSeats }))}
+        zoneDays={data.rows.map((r) => ({
+          day: r.date,
+          cells: Object.fromEntries(zm.zones.map((z) => [z.id, { value: zm.overrides.get(`${z.id}|${r.date}`) ?? null, booked: zm.paxOf(z.id, r.date) }])),
+        }))}
         tableSeats={data.seatsFromTables}
         defaultCapacity={data.settings.defaultCapacity}
         days={data.rows.map((r) => ({

@@ -13,7 +13,7 @@ type Day = { day: string; booked: number; waiting: number; capacity: number | nu
 
 const num = (s: string): number | null => (s.trim() === "" ? null : Math.max(0, Math.min(5000, Math.round(Number(s)) || 0)));
 
-export function CapacityEditor({ restaurantId, month, today, locale, tableSeats, defaultCapacity, days }: {
+export function CapacityEditor({ restaurantId, month, today, locale, tableSeats, defaultCapacity, days, zones, zoneDays }: {
   restaurantId: string;
   month: string;
   today: string;
@@ -21,6 +21,8 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
   tableSeats: number;
   defaultCapacity: number | null;
   days: Day[];
+  zones: { id: string; name: string; defaultCapacity: number | null; tableSeats: number }[];
+  zoneDays: { day: string; cells: Record<string, { value: number | null; booked: number }> }[];
 }) {
   const t = useT();
   const router = useRouter();
@@ -28,8 +30,16 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
   const [def, setDef] = useState(defaultCapacity === null ? "" : String(defaultCapacity));
   const [rows, setRows] = useState(days.map((d) => ({ ...d, value: d.capacity === null ? "" : String(d.capacity) })));
   const [fill, setFill] = useState("");
+  const str = (n: number | null) => (n === null ? "" : String(n));
+  const [zdef, setZdef] = useState<Record<string, string>>(Object.fromEntries(zones.map((z) => [z.id, str(z.defaultCapacity)])));
+  const [zval, setZval] = useState<Record<string, string>>(
+    Object.fromEntries(zoneDays.flatMap((d) => zones.map((z) => [`${z.id}|${d.day}`, str(d.cells[z.id]?.value ?? null)]))),
+  );
+  const zoneDirty =
+    zones.some((z) => zdef[z.id] !== str(z.defaultCapacity)) ||
+    zoneDays.some((d) => zones.some((z) => zval[`${z.id}|${d.day}`] !== str(d.cells[z.id]?.value ?? null)));
   const base = num(def) ?? tableSeats;
-  const dirty = def !== (defaultCapacity === null ? "" : String(defaultCapacity)) || rows.some((r, i) => r.value !== (days[i].capacity === null ? "" : String(days[i].capacity)) || r.note !== days[i].note);
+  const dirty = def !== (defaultCapacity === null ? "" : String(defaultCapacity)) || rows.some((r, i) => r.value !== (days[i].capacity === null ? "" : String(days[i].capacity)) || r.note !== days[i].note) || zoneDirty;
 
   const setRow = (i: number, patch: Partial<(typeof rows)[number]>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
@@ -40,6 +50,8 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
         month,
         default_capacity: num(def),
         days: rows.map((r) => ({ day: r.day, capacity: num(r.value), note: r.note.trim() || null })),
+        zones: zoneDirty ? zones.map((z) => ({ area_id: z.id, default_capacity: num(zdef[z.id] ?? "") })) : [],
+        zone_days: !zoneDirty ? [] : zoneDays.flatMap((d) => zones.map((z) => ({ area_id: z.id, day: d.day, capacity: num(zval[`${z.id}|${d.day}`] ?? "") }))),
       });
       if (res.ok) {
         toast.success(t("Saved"));
@@ -112,6 +124,60 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
           );
         })}
       </div>
+
+      {zones.length > 0 ? (
+        <Card>
+          <CardContent className="space-y-3 pt-4">
+            <div>
+              <p className="font-semibold text-slate-900">{t("Guests per zone")}</p>
+              <p className="text-xs text-muted">{t("Each zone (room) can have its own limit. Blank = the zone's table seats. 0 = closed.")}</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {zones.map((z) => (
+                <label key={z.id} className="space-y-1">
+                  <span className="block text-xs font-medium text-slate-700">{z.name} · {t("default")}</span>
+                  <Input type="number" min={0} value={zdef[z.id] ?? ""} onChange={(e) => setZdef((m) => ({ ...m, [z.id]: e.target.value }))} placeholder={String(z.tableSeats)} className="w-32 text-lg font-semibold" />
+                </label>
+              ))}
+            </div>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-xs text-muted">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">{t("Date")}</th>
+                    {zones.map((z) => <th key={z.id} className="px-3 py-2 text-left font-medium">{z.name}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {zoneDays.map((d) => {
+                    const dt = new Date(`${d.day}T12:00:00Z`);
+                    return (
+                      <tr key={d.day} className={cn(d.day < today && "opacity-60", d.day === today && "bg-brand-50/50")}>
+                        <td className="whitespace-nowrap px-3 py-1.5 tabular-nums text-slate-700">
+                          {dt.getUTCDate()} <span className="text-xs text-muted">{dt.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" })}</span>
+                        </td>
+                        {zones.map((z) => {
+                          const v = zval[`${z.id}|${d.day}`] ?? "";
+                          const capacity = num(v) ?? num(zdef[z.id] ?? "") ?? z.tableSeats;
+                          const booked = d.cells[z.id]?.booked ?? 0;
+                          return (
+                            <td key={z.id} className="px-3 py-1.5">
+                              <div className="flex items-center gap-2">
+                                <Input type="number" min={0} value={v} onChange={(e) => setZval((m) => ({ ...m, [`${z.id}|${d.day}`]: e.target.value }))} placeholder={String(num(zdef[z.id] ?? "") ?? z.tableSeats)} aria-label={`${z.name} ${d.day}`} className="h-8 w-20 text-center tabular-nums" />
+                                <span className={cn("text-xs tabular-nums", booked > capacity ? "font-semibold text-red-700" : booked === capacity && capacity > 0 ? "text-amber-700" : "text-muted")}>{booked}/{capacity}</span>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="sticky bottom-0 -mx-1 flex items-center justify-end gap-3 border-t bg-white/95 px-1 py-3 backdrop-blur">
         <p className="text-xs text-muted">{t("Blank day = default. 0 = closed / not taking bookings.")}</p>

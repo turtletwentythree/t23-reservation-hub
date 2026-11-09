@@ -691,6 +691,12 @@ const T: Record<string, Entry> = {
   "Booked tables": { th: "โต๊ะที่ถูกจองแล้ว", fr: "Tables réservées" },
   "Tap a time to see the rooms.": { th: "กดเวลาเพื่อดูห้องและโต๊ะ", fr: "Touchez une heure pour voir les salles." },
   "Log a request": { th: "บันทึกเรื่องจอง", fr: "Saisir une demande" },
+  // Zone capacity
+  "Guests per zone": { th: "รับคนต่อโซน", fr: "Clients par zone" },
+  "Each zone (room) can have its own limit. Blank = the zone's table seats. 0 = closed.": { th: "แต่ละโซน (ห้อง) กำหนดจำนวนคนได้เอง เว้นว่าง = ใช้จำนวนที่นั่งของโต๊ะในโซน · 0 = ปิด", fr: "Chaque zone (salle) peut avoir sa limite. Vide = places des tables de la zone. 0 = fermé." },
+  "default": { th: "ค่าเริ่มต้น", fr: "par défaut" },
+  "Guests today": { th: "ลูกค้าวันนี้", fr: "Clients ce jour" },
+  "Zone capacity is not set up yet. Ask the Admin to run the latest database update (zone-capacity.sql) in Supabase.": { th: "ยังไม่ได้เปิดใช้การกำหนดรับคนต่อโซน ให้แอดมินรันอัปเดตฐานข้อมูล (zone-capacity.sql) ใน Supabase ก่อน", fr: "La capacité par zone n'est pas encore activée. Demandez à l'Admin d'exécuter la mise à jour (zone-capacity.sql) dans Supabase." },
   // Interim dashboard and daily capacity
   "Daily capacity": { th: "กำหนดรับคนต่อวัน", fr: "Capacité journalière" },
   "How many guests this restaurant accepts each day. The Call Center and the store see FULL / OVER CAP against this number.": { th: "จำนวนลูกค้าที่ร้านรับได้ในแต่ละวัน คอลเซ็นเตอร์และหน้าร้านจะเห็นสถานะ FULL / OVER CAP เทียบกับตัวเลขนี้", fr: "Nombre de clients acceptés par jour. Le centre d'appels et l'établissement voient FULL / OVER CAP par rapport à ce chiffre." },

@@ -10,7 +10,7 @@ import { loadOccupancy } from "@/lib/domain/reservation-service";
 import { buildAvailabilityBoard, summarizeRooms } from "@/lib/domain/availability-board";
 import { shiftMonth, type CapacityStatus } from "@/lib/domain/capacity-check";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/domain/request-tags";
-import { loadAreas, loadCapacityMonth } from "@/lib/data/capacity";
+import { loadAreas, loadCapacityMonth, loadZoneMonth } from "@/lib/data/capacity";
 import { RoomStatus } from "@/components/room-status";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
@@ -60,6 +60,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const supabase = await createClient();
   const cap = await loadCapacityMonth(supabase, restaurantId, month);
   const [occupancy, areas] = await Promise.all([loadOccupancy(supabase, restaurantId, date, restaurant.timezone), loadAreas(supabase, restaurantId)]);
+  const zm = await loadZoneMonth(supabase, restaurantId, month, cap.config);
+  const zoneGuests = new Map(zm.zones.map((z) => [z.id, { pax: zm.paxOf(z.id, date), cap: zm.capacityOf(z.id, date) }]));
   const rows = cap.rows;
   const board = buildAvailabilityBoard({
     date,
@@ -248,7 +250,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               <Button asChild size="sm"><Link href={actionHref(slot.time)}>{canBook ? t("Book table") : t("Log a request")} · {slot.time}</Link></Button>
             ) : null}
           </div>
-          {board.ok ? <RoomStatus rooms={rooms} t={t} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
+          {board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
         </CardContent>
       </Card>
     </div>

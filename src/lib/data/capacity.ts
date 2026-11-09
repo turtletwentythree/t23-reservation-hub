@@ -67,3 +67,62 @@ export async function loadAreas(supabase: Parameters<typeof loadCapacitySettings
     .order("sort_order");
   return data ?? [];
 }
+
+export interface ZoneInfo {
+  id: string;
+  name: string;
+  /** Default guests per day for this zone (null = use the zone's table seats). */
+  defaultCapacity: number | null;
+  /** Seats of the zone's active tables. */
+  tableSeats: number;
+}
+
+/**
+ * Guests per zone (room): settings and guests booked, for every day of a month.
+ * Guests are counted in the zone of the booking's table; bookings with no table yet count only in the day total.
+ * Tolerates the zone settings not being installed yet.
+ */
+export async function loadZoneMonth(supabase: Client, restaurantId: string, month: string, config: RestaurantConfig) {
+  const days = monthDays(month);
+  const from = days[0];
+  const to = days[days.length - 1];
+  const [areasRes, overridesRes, resRes] = await Promise.all([
+    supabase.from("restaurant_areas").select("id, name, sort_order, default_daily_capacity").eq("restaurant_id", restaurantId).eq("is_active", true).order("sort_order"),
+    supabase.from("daily_zone_capacity").select("area_id, day, capacity").eq("restaurant_id", restaurantId).gte("day", from).lte("day", to),
+    supabase
+      .from("reservations")
+      .select("reservation_date, party_size, reservation_tables(table_id)")
+      .eq("restaurant_id", restaurantId)
+      .gte("reservation_date", from)
+      .lte("reservation_date", to)
+      .not("status", "in", "(cancelled,no_show)"),
+  ]);
+  const installed = !areasRes.error && !overridesRes.error;
+  // Without the new column fall back to the plain area list.
+  const areaRows = areasRes.error
+    ? ((await supabase.from("restaurant_areas").select("id, name, sort_order").eq("restaurant_id", restaurantId).eq("is_active", true).order("sort_order")).data ?? []).map((a) => ({ ...a, default_daily_capacity: null as number | null }))
+    : (areasRes.data ?? []);
+  const tableArea = new Map(config.tables.map((x) => [x.id, x.area_id]));
+  const zones: ZoneInfo[] = areaRows
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      defaultCapacity: a.default_daily_capacity,
+      tableSeats: config.tables.filter((x) => x.is_active && x.area_id === a.id && x.service_status !== "out_of_service").reduce((n, x) => n + x.max_capacity, 0),
+    }))
+    .filter((z) => config.tables.some((x) => x.is_active && x.area_id === z.id));
+  const overrides = new Map((overridesRes.error ? [] : (overridesRes.data ?? [])).map((o) => [`${o.area_id}|${o.day}`, o.capacity]));
+  const pax = new Map<string, number>();
+  for (const r of resRes.data ?? []) {
+    const first = (r.reservation_tables ?? []).map((x: { table_id: string }) => tableArea.get(x.table_id)).find(Boolean);
+    if (!first) continue;
+    const k = `${first}|${r.reservation_date}`;
+    pax.set(k, (pax.get(k) ?? 0) + r.party_size);
+  }
+  /** Guests the zone accepts on a day: per-day number, else the zone default, else its table seats. */
+  const capacityOf = (areaId: string, day: string) => overrides.get(`${areaId}|${day}`) ?? zones.find((z) => z.id === areaId)?.defaultCapacity ?? zones.find((z) => z.id === areaId)?.tableSeats ?? 0;
+  const paxOf = (areaId: string, day: string) => pax.get(`${areaId}|${day}`) ?? 0;
+  return { installed, zones, overrides, capacityOf, paxOf };
+}
+
+export type ZoneMonth = Awaited<ReturnType<typeof loadZoneMonth>>;

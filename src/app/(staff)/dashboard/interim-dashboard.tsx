@@ -5,7 +5,7 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, todayIn } from "@/lib/data/common";
-import { loadAreas, loadCapacityMonth } from "@/lib/data/capacity";
+import { loadAreas, loadCapacityMonth, loadZoneMonth } from "@/lib/data/capacity";
 import { loadOccupancy } from "@/lib/domain/reservation-service";
 import { buildAvailabilityBoard, summarizeRooms } from "@/lib/domain/availability-board";
 import { RoomStatus } from "@/components/room-status";
@@ -75,6 +75,8 @@ export async function InterimDashboard({ ctx, restaurantParam }: { ctx: StaffCon
   });
   const nowIdx = board.ok ? Math.max(0, board.slots.findIndex((s) => !s.past)) : 0;
   const rooms = board.ok ? summarizeRooms(board, new Map(cur.config.tables.map((x) => [x.id, x.area_id])), areas, nowIdx) : [];
+  const zm = await loadZoneMonth(supabase, restaurantId, month, cur.config);
+  const zoneGuests = new Map(zm.zones.map((z) => [z.id, { pax: zm.paxOf(z.id, today), cap: zm.capacityOf(z.id, today) }]));
   const all = [...cur.rows, ...next.rows];
   const todayRow = all.find((r) => r.date === today)!;
   const coming = all.filter((r) => r.date >= today && r.date <= addDays(today, 13));
@@ -179,7 +181,7 @@ export async function InterimDashboard({ ctx, restaurantParam }: { ctx: StaffCon
           <Link href={`/availability?restaurant=${restaurantId}`} className="text-sm font-medium text-brand-600 hover:underline">{t("Table availability")}</Link>
         </CardHeader>
         <CardContent>
-          {board.ok ? <RoomStatus rooms={rooms} t={t} /> : <p className="py-3 text-center text-sm text-muted">{t("Closed on this day")}</p>}
+          {board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="py-3 text-center text-sm text-muted">{t("Closed on this day")}</p>}
         </CardContent>
       </Card>
 

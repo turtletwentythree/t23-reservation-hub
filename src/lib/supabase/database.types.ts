@@ -263,6 +263,18 @@ isOneToOne: false
                     "capacity"?: number | null,"day"?: string,"note"?: string | null,"restaurant_id"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: []
+                },"daily_zone_capacity": {
+                  Row: {
+                    "area_id": string,"capacity": number,"day": string,"restaurant_id": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "area_id": string,"capacity": number,"day": string,"restaurant_id": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "area_id"?: string,"capacity"?: number,"day"?: string,"restaurant_id"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: []
                 },"data_subject_requests": {
                   Row: {
                     "created_at": string,"customer_id": string | null,"id": string,"notes": string | null,"organization_id": string,"processed_at": string | null,"processed_by": string | null,"request_type": Database["public"]['Enums']["dsr_type"],"requester_contact": string | null,"status": Database["public"]['Enums']["dsr_status"],"updated_at": string
@@ -625,14 +637,14 @@ isOneToOne: false
                   ]
                 },"restaurant_areas": {
                   Row: {
-                    "canvas_height": number,"canvas_width": number,"created_at": string,"id": string,"is_active": boolean,"name": string,"restaurant_id": string,"sort_order": number,"updated_at": string
+                    "canvas_height": number,"canvas_width": number,"created_at": string,"default_daily_capacity": number | null,"id": string,"is_active": boolean,"name": string,"restaurant_id": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "canvas_height"?: number,"canvas_width"?: number,"created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"restaurant_id": string,"sort_order"?: number,"updated_at"?: string
+                    "canvas_height"?: number,"canvas_width"?: number,"created_at"?: string,"default_daily_capacity"?: number | null,"id"?: string,"is_active"?: boolean,"name": string,"restaurant_id": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "canvas_height"?: number,"canvas_width"?: number,"created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"restaurant_id"?: string,"sort_order"?: number,"updated_at"?: string
+                    "canvas_height"?: number,"canvas_width"?: number,"created_at"?: string,"default_daily_capacity"?: number | null,"id"?: string,"is_active"?: boolean,"name"?: string,"restaurant_id"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
