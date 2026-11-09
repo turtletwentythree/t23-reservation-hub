@@ -20,7 +20,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const ctx = await requireStaff("dashboard.view", "dashboard");
   const sp = await searchParams;
   // During the interim phone / LINE period the dashboard is the capacity overview.
-  if (INTERIM_MENU) return <InterimDashboard ctx={ctx} restaurantParam={pickParam(sp.restaurant)} />;
+  if (INTERIM_MENU) return <InterimDashboard ctx={ctx} params={{ restaurant: pickParam(sp.restaurant), view: pickParam(sp.view), date: pickParam(sp.date), from: pickParam(sp.from), to: pickParam(sp.to) }} />;
   const { t } = await getStaffT();
   const date = pickParam(sp.date) ?? todayIn();
   const source = pickParam(sp.source) ?? "";

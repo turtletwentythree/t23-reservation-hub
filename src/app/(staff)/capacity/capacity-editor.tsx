@@ -35,6 +35,9 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
   const [zval, setZval] = useState<Record<string, string>>(
     Object.fromEntries(zoneDays.flatMap((d) => zones.map((z) => [`${z.id}|${d.day}`, str(d.cells[z.id]?.value ?? null)]))),
   );
+  const [activeZone, setActiveZone] = useState(zones[0]?.id ?? "");
+  const [zfill, setZfill] = useState("");
+  const az = zones.find((z) => z.id === activeZone) ?? zones[0];
   const zoneDirty =
     zones.some((z) => zdef[z.id] !== str(z.defaultCapacity)) ||
     zoneDays.some((d) => zones.some((z) => zval[`${z.id}|${d.day}`] !== str(d.cells[z.id]?.value ?? null)));
@@ -140,41 +143,46 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
                 </label>
               ))}
             </div>
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-xs text-muted">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">{t("Date")}</th>
-                    {zones.map((z) => <th key={z.id} className="px-3 py-2 text-left font-medium">{z.name}</th>)}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {zoneDays.map((d) => {
-                    const dt = new Date(`${d.day}T12:00:00Z`);
-                    return (
-                      <tr key={d.day} className={cn(d.day < today && "opacity-60", d.day === today && "bg-brand-50/50")}>
-                        <td className="whitespace-nowrap px-3 py-1.5 tabular-nums text-slate-700">
-                          {dt.getUTCDate()} <span className="text-xs text-muted">{dt.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" })}</span>
-                        </td>
-                        {zones.map((z) => {
-                          const v = zval[`${z.id}|${d.day}`] ?? "";
-                          const capacity = num(v) ?? num(zdef[z.id] ?? "") ?? z.tableSeats;
-                          const booked = d.cells[z.id]?.booked ?? 0;
-                          return (
-                            <td key={z.id} className="px-3 py-1.5">
-                              <div className="flex items-center gap-2">
-                                <Input type="number" min={0} value={v} onChange={(e) => setZval((m) => ({ ...m, [`${z.id}|${d.day}`]: e.target.value }))} placeholder={String(num(zdef[z.id] ?? "") ?? z.tableSeats)} aria-label={`${z.name} ${d.day}`} className="h-8 w-20 text-center tabular-nums" />
-                                <span className={cn("text-xs tabular-nums", booked > capacity ? "font-semibold text-red-700" : booked === capacity && capacity > 0 ? "text-amber-700" : "text-muted")}>{booked}/{capacity}</span>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-wrap rounded-lg border bg-white p-0.5">
+                {zones.map((z) => (
+                  <button key={z.id} type="button" onClick={() => setActiveZone(z.id)} className={cn("rounded-md px-3 py-1 text-sm", az?.id === z.id ? "bg-brand-500 text-white" : "text-slate-700 hover:bg-slate-100")}>{z.name}</button>
+                ))}
+              </div>
+              {az ? (
+                <div className="ml-auto flex items-end gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-xs font-medium text-slate-700">{t("Set every day this month to")}</span>
+                    <Input type="number" min={0} value={zfill} onChange={(e) => setZfill(e.target.value)} className="h-9 w-28" />
+                  </label>
+                  <Button type="button" variant="outline" onClick={() => setZval((m) => ({ ...m, ...Object.fromEntries(zoneDays.map((d) => [`${az.id}|${d.day}`, zfill])) }))}>{t("Apply to all")}</Button>
+                </div>
+              ) : null}
             </div>
+            {az ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                {zoneDays.map((d) => {
+                  const key = `${az.id}|${d.day}`;
+                  const v = zval[key] ?? "";
+                  const zbase = num(zdef[az.id] ?? "") ?? az.tableSeats;
+                  const capacity = num(v) ?? zbase;
+                  const booked = d.cells[az.id]?.booked ?? 0;
+                  const over = booked > capacity;
+                  const full = !over && capacity > 0 && booked === capacity;
+                  const dt = new Date(`${d.day}T12:00:00Z`);
+                  return (
+                    <div key={d.day} className={cn("rounded-xl border bg-white p-2", d.day < today && "opacity-60", d.day === today && "ring-2 ring-brand-400", v !== "" && "border-brand-300 bg-brand-50/40")}>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-sm font-semibold tabular-nums text-slate-900">{dt.getUTCDate()}</span>
+                        <span className="text-[11px] text-muted">{dt.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" })}</span>
+                      </div>
+                      <Input type="number" min={0} value={v} onChange={(e) => setZval((m) => ({ ...m, [key]: e.target.value }))} placeholder={String(zbase)} aria-label={`${az.name} ${d.day}`} className="mt-1 h-8 text-center tabular-nums" />
+                      <p className={cn("mt-1 text-center text-[11px] tabular-nums", over ? "font-semibold text-red-700" : full ? "text-amber-700" : "text-muted")}>{t("Booked")} {booked}/{capacity}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

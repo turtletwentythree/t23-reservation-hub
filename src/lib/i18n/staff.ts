@@ -692,6 +692,9 @@ const T: Record<string, Entry> = {
   "Tap a time to see the rooms.": { th: "กดเวลาเพื่อดูห้องและโต๊ะ", fr: "Touchez une heure pour voir les salles." },
   "Log a request": { th: "บันทึกเรื่องจอง", fr: "Saisir une demande" },
   // Zone capacity
+  "Custom": { th: "กำหนดช่วง", fr: "Personnalisé" },
+  "Average per day": { th: "เฉลี่ยต่อวัน", fr: "Moyenne par jour" },
+  "Day by day": { th: "รายวัน", fr: "Jour par jour" },
   "Zones": { th: "โซน", fr: "Zones" },
   "Guests per zone": { th: "รับคนต่อโซน", fr: "Clients par zone" },
   "Each zone (room) can have its own limit. Blank = the zone's table seats. 0 = closed.": { th: "แต่ละโซน (ห้อง) กำหนดจำนวนคนได้เอง เว้นว่าง = ใช้จำนวนที่นั่งของโต๊ะในโซน · 0 = ปิด", fr: "Chaque zone (salle) peut avoir sa limite. Vide = places des tables de la zone. 0 = fermé." },
