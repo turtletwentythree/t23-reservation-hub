@@ -1,6 +1,6 @@
 import { requireStaff } from "@/lib/auth/session";
 import { roleCan, ROLE_LABELS } from "@/lib/auth/permissions";
-import { NAV_GROUPS, NAV_ITEMS } from "@/components/layout/nav";
+import { INTERIM_MENU, NAV_GROUPS, NAV_ITEMS } from "@/components/layout/nav";
 import { AppShell } from "@/components/layout/app-shell";
 import { getStaffT } from "@/lib/i18n/staff-server";
 import { createClient } from "@/lib/supabase/server";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireStaff();
   const { locale, t } = await getStaffT();
-  const visible = NAV_ITEMS.filter((i) => roleCan(ctx.role, i.permission) && ctx.pages.includes(i.key));
+  const visible = NAV_ITEMS.filter((i) => roleCan(ctx.role, i.permission) && ctx.pages.includes(i.key) && (!INTERIM_MENU || INTERIM_MENU.includes(i.key)));
   // Count of Call Center requests still waiting to be keyed in, shown next to the menu item.
   let pendingRequests = 0;
   if (visible.some((i) => i.key === "requests") && ctx.branchIds.length > 0) {

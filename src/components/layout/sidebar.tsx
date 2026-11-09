@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/staff-locale";
+import { HOME_HREF } from "./nav";
 
 const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users };
 
@@ -18,7 +19,7 @@ export function Sidebar({ items, open, onClose }: { items: NavSection[]; open: b
       {open ? <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={onClose} /> : null}
       <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-brand-900 text-brand-50 transition-transform lg:static lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
         <div className="flex h-14 items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Link href={HOME_HREF} className="flex items-center gap-2 font-semibold">
             <span className="flex size-9 items-center justify-center rounded-lg bg-white p-0.5">
               <Image src="/turtle23-mark.png" width={256} height={256} alt="Turtle 23" className="size-full object-contain" />
             </span>

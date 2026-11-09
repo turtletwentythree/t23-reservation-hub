@@ -32,6 +32,15 @@ export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: strin
   { key: "audit-logs", href: "/audit-logs", label: "Audit Logs", icon: "ScrollText", permission: "audit.view", group: "admin" },
 ];
 
+/**
+ * Interim phone / LINE booking period: only these pages appear in the menu.
+ * Other pages still exist (and open by URL for those allowed); set to null to bring the full menu back.
+ */
+export const INTERIM_MENU: PageKey[] | null = ["requests", "availability", "reservations", "users"];
+
+/** Where staff land after signing in. */
+export const HOME_HREF = INTERIM_MENU ? "/requests" : "/dashboard";
+
 /** Roles whose pages an Admin can switch on and off. Admin itself always sees every page. */
 export const CONFIGURABLE_ROLES = ["host", "call_center", "viewer"] as const;
 export type ConfigurableRole = (typeof CONFIGURABLE_ROLES)[number];
