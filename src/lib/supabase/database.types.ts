@@ -251,6 +251,18 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"daily_capacity": {
+                  Row: {
+                    "capacity": number | null,"day": string,"note": string | null,"restaurant_id": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "capacity"?: number | null,"day": string,"note"?: string | null,"restaurant_id": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "capacity"?: number | null,"day"?: string,"note"?: string | null,"restaurant_id"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: []
                 },"data_subject_requests": {
                   Row: {
                     "created_at": string,"customer_id": string | null,"id": string,"notes": string | null,"organization_id": string,"processed_at": string | null,"processed_by": string | null,"request_type": Database["public"]['Enums']["dsr_type"],"requester_contact": string | null,"status": Database["public"]['Enums']["dsr_status"],"updated_at": string
@@ -659,14 +671,14 @@ isOneToOne: false
                   ]
                 },"restaurants": {
                   Row: {
-                    "accepts_online_bookings": boolean,"address": string | null,"brand_color": string | null,"created_at": string,"cuisine": string | null,"currency": string,"description": string | null,"email": string | null,"id": string,"is_active": boolean,"logo_path": string | null,"name": string,"organization_id": string,"phone": string | null,"slug": string,"timezone": string,"updated_at": string
+                    "accepts_online_bookings": boolean,"address": string | null,"brand_color": string | null,"created_at": string,"cuisine": string | null,"currency": string,"default_daily_capacity": number | null,"description": string | null,"email": string | null,"id": string,"is_active": boolean,"logo_path": string | null,"name": string,"organization_id": string,"phone": string | null,"slug": string,"timezone": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepts_online_bookings"?: boolean,"address"?: string | null,"brand_color"?: string | null,"created_at"?: string,"cuisine"?: string | null,"currency"?: string,"description"?: string | null,"email"?: string | null,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"name": string,"organization_id": string,"phone"?: string | null,"slug": string,"timezone"?: string,"updated_at"?: string
+                    "accepts_online_bookings"?: boolean,"address"?: string | null,"brand_color"?: string | null,"created_at"?: string,"cuisine"?: string | null,"currency"?: string,"default_daily_capacity"?: number | null,"description"?: string | null,"email"?: string | null,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"name": string,"organization_id": string,"phone"?: string | null,"slug": string,"timezone"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "accepts_online_bookings"?: boolean,"address"?: string | null,"brand_color"?: string | null,"created_at"?: string,"cuisine"?: string | null,"currency"?: string,"description"?: string | null,"email"?: string | null,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"name"?: string,"organization_id"?: string,"phone"?: string | null,"slug"?: string,"timezone"?: string,"updated_at"?: string
+                    "accepts_online_bookings"?: boolean,"address"?: string | null,"brand_color"?: string | null,"created_at"?: string,"cuisine"?: string | null,"currency"?: string,"default_daily_capacity"?: number | null,"description"?: string | null,"email"?: string | null,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"name"?: string,"organization_id"?: string,"phone"?: string | null,"slug"?: string,"timezone"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

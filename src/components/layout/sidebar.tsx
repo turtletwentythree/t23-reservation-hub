@@ -2,12 +2,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users, X } from "lucide-react";
+import { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, SlidersHorizontal, ScrollText, Settings, Store, UserCog, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/staff-locale";
 import { HOME_HREF } from "./nav";
 
-const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, ScrollText, Settings, Store, UserCog, Users };
+const ICONS = { BarChart3, Bell, BookOpen, CalendarDays, Grid3x3, LayoutDashboard, LayoutGrid, ListOrdered, PhoneCall, Plug, SlidersHorizontal, ScrollText, Settings, Store, UserCog, Users };
 
 export type NavSection = { label: string; items: { href: string; label: string; icon: string; badge?: number }[] };
 

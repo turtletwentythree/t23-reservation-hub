@@ -32,3 +32,18 @@ describe("buildCapacityMonth", () => {
     expect(d("2026-12-07").status).toBe("closed");
   });
 });
+
+describe("per-day capacity", () => {
+  it("uses the capacity for each day and treats 0 as closed", () => {
+    const days = buildCapacityMonth({
+      month: "2026-12",
+      seats: (d) => (d === "2026-12-02" ? 0 : d === "2026-12-03" ? 4 : 26),
+      hours,
+      reservations: [{ date: "2026-12-03", party: 5, notes: "[KOL]" }],
+      waiting: [],
+    });
+    expect(days[0].seats).toBe(26);
+    expect(days[1].status).toBe("closed");
+    expect(days[2]).toMatchObject({ seats: 4, left: -1, status: "over" });
+  });
+});

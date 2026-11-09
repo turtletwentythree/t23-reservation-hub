@@ -2,7 +2,7 @@ import { roleCan, type Permission } from "@/lib/auth/permissions";
 import type { AppRole } from "@/lib/supabase/types";
 
 export type PageKey =
-  | "dashboard" | "requests" | "availability" | "reservations" | "calendar" | "floor-plan" | "waitlist" | "customers" | "notifications"
+  | "dashboard" | "requests" | "availability" | "capacity" | "reservations" | "calendar" | "floor-plan" | "waitlist" | "customers" | "notifications"
   | "reports" | "restaurants" | "integrations" | "users" | "settings" | "audit-logs";
 
 /** Menu sections: front of house (service floor), back office (management), system admin. */
@@ -22,6 +22,7 @@ export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: strin
   { key: "calendar", href: "/calendar", label: "Calendar", icon: "CalendarDays", permission: "reservation.view", group: "front" },
   { key: "floor-plan", href: "/floor-plan", label: "Floor Plan", icon: "LayoutGrid", permission: "reservation.view", group: "front" },
   { key: "waitlist", href: "/waitlist", label: "Waitlist", icon: "ListOrdered", permission: "reservation.view", group: "front" },
+  { key: "capacity", href: "/capacity", label: "Daily capacity", icon: "SlidersHorizontal", permission: "restaurant.manage", group: "back" },
   { key: "customers", href: "/customers", label: "Customers", icon: "Users", permission: "customer.view", group: "back" },
   { key: "reports", href: "/reports", label: "Reports", icon: "BarChart3", permission: "report.view", group: "back" },
   { key: "notifications", href: "/notifications", label: "Notifications", icon: "Bell", permission: "notification.view", group: "back" },
@@ -36,10 +37,10 @@ export const NAV_ITEMS: { key: PageKey; href: string; label: string; icon: strin
  * Interim phone / LINE booking period: only these pages appear in the menu.
  * Other pages still exist (and open by URL for those allowed); set to null to bring the full menu back.
  */
-export const INTERIM_MENU: PageKey[] | null = ["requests", "availability", "reservations", "users"];
+export const INTERIM_MENU: PageKey[] | null = ["dashboard", "requests", "availability", "reservations", "capacity", "users"];
 
 /** Where staff land after signing in. */
-export const HOME_HREF = INTERIM_MENU ? "/requests" : "/dashboard";
+export const HOME_HREF = "/dashboard";
 
 /** Roles whose pages an Admin can switch on and off. Admin itself always sees every page. */
 export const CONFIGURABLE_ROLES = ["host", "call_center", "viewer"] as const;
@@ -67,7 +68,7 @@ export function parsePageAccess(raw: unknown): PageAccess {
 /** Pages this role may open, after the Admin's switches. */
 /** Pages a role starts with before the Admin changes anything. */
 export const DEFAULT_PAGES: Partial<Record<AppRole, PageKey[]>> = {
-  call_center: ["requests", "availability"],
+  call_center: ["dashboard", "requests", "availability"],
 };
 
 export function allowedPages(role: AppRole, access: PageAccess): PageKey[] {

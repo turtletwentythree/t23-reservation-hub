@@ -27,7 +27,8 @@ export function monthDays(month: string): string[] {
 
 export function buildCapacityMonth(args: {
   month: string; // "YYYY-MM"
-  seats: number;
+  /** Guests accepted on a day (daily capacity setting, or the table seats). */
+  seats: number | ((date: string) => number);
   hours: HoursInput[];
   reservations: { date: string; party: number; notes: string | null }[];
   waiting: { date: string; party: number }[];
@@ -40,8 +41,14 @@ export function buildCapacityMonth(args: {
     }
     const total = pax.internal + pax.kol + pax.media + pax.other;
     const waiting = args.waiting.filter((w) => w.date === date).reduce((a, w) => a + w.party, 0);
-    const closed = servicesForDate(args.hours, date).length === 0;
-    const status: CapacityStatus = closed ? "closed" : total > args.seats ? "over" : total === args.seats ? "full" : "ok";
-    return { date, pax, total, waiting, seats: args.seats, left: args.seats - total, status };
+    const seats = typeof args.seats === "function" ? args.seats(date) : args.seats;
+    const closed = servicesForDate(args.hours, date).length === 0 || seats === 0;
+    const status: CapacityStatus = closed ? "closed" : total > seats ? "over" : total === seats ? "full" : "ok";
+    return { date, pax, total, waiting, seats, left: seats - total, status };
   });
+}
+
+export function shiftMonth(month: string, by: number) {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + by, 1)).toISOString().slice(0, 7);
 }

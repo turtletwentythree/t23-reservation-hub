@@ -6,7 +6,7 @@ import type { AppRole } from "@/lib/supabase/types";
  * the app checks these before acting, and Postgres RLS enforces them again.
  */
 export const PERMISSIONS = {
-  "dashboard.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer"],
+  "dashboard.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
   "reservation.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
   "availability.view": ["super_admin", "group_manager", "restaurant_manager", "host", "viewer", "call_center"],
   "request.create": ["super_admin", "group_manager", "restaurant_manager", "host", "call_center"],
