@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
@@ -18,7 +19,11 @@ function safeNext(next: string | undefined | null) {
 export async function signInWithMicrosoftAction(formData: FormData) {
   if (!(await rateLimit("login", 10, 300))) redirect("/login?error=rate_limited");
   const next = safeNext(formData.get("next")?.toString());
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Use the address the user is actually on, so the return URL always matches this site.
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const origin = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "azure",

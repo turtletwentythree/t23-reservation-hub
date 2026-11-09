@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PREFIXES = ["/login", "/book", "/reservation", "/embed", "/api/v1", "/api/public", "/api/webhooks", "/api/cron", "/auth"];
 
 export async function middleware(request: NextRequest) {
+  // If Supabase fell back to the Site URL (return URL not in its allow-list), forward the result to the callback.
+  const sp0 = request.nextUrl.searchParams;
+  if (request.nextUrl.pathname === "/" && (sp0.get("code") || sp0.get("error") || sp0.get("error_description"))) {
+    const to = request.nextUrl.clone();
+    to.pathname = "/auth/callback";
+    return NextResponse.redirect(to);
+  }
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
