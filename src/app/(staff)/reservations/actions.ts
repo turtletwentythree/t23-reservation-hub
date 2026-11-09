@@ -10,11 +10,13 @@ import {
   createReservation,
   DomainError,
   getAvailability,
+  loadOccupancy,
+  loadRestaurantConfig,
   availabilityMessage,
   updateReservationRow,
 } from "@/lib/domain/reservation-service";
 import { canTransition } from "@/lib/domain/status";
-import { durationForParty } from "@/lib/domain/availability";
+import { durationForParty, localToUtc } from "@/lib/domain/availability";
 import { reservationEvent } from "@/lib/events";
 import type { ReservationStatus } from "@/lib/supabase/types";
 
@@ -61,6 +63,40 @@ export async function getSlotsAction(input: {
         available: s.available,
         options: s.options.slice(0, 8).map((o) => ({ table_ids: o.table_ids, labels: o.labels, capacity: o.capacity, kind: o.kind })),
       })),
+    });
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Which tables are taken at a date and time (for the floor plan picker). */
+export async function getTableStatusAction(input: {
+  restaurantId: string;
+  date: string;
+  time: string;
+  partySize: number;
+  ignoreReservationId?: string;
+}): Promise<ActionResult<{ busy: string[]; out: string[] }>> {
+  try {
+    const args = z
+      .object({
+        restaurantId: z.string().uuid(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        time: z.string().regex(/^\d{2}:\d{2}$/),
+        partySize: z.number().int().min(1).max(200),
+        ignoreReservationId: z.string().uuid().optional(),
+      })
+      .parse(input);
+    await assertPermission("reservation.view", args.restaurantId);
+    const supabase = await createClient();
+    const config = await loadRestaurantConfig(supabase, args.restaurantId);
+    const occupancy = await loadOccupancy(supabase, args.restaurantId, args.date, config.restaurant.timezone);
+    const start = localToUtc(args.date, args.time, config.restaurant.timezone);
+    const end = new Date(start.getTime() + durationForParty(config.policy, args.partySize) * 60_000);
+    const busy = new Set(occupancy.filter((o) => o.reservation_id !== args.ignoreReservationId && o.start < end && start < o.end).map((o) => o.table_id));
+    return ok({
+      busy: [...busy],
+      out: config.tables.filter((t) => t.is_active && t.service_status === "out_of_service").map((t) => t.id),
     });
   } catch (e) {
     return fail(e);

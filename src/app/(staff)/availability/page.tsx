@@ -12,6 +12,8 @@ import { shiftMonth, type CapacityStatus } from "@/lib/domain/capacity-check";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/domain/request-tags";
 import { loadAreas, loadCapacityMonth, loadZoneMonth } from "@/lib/data/capacity";
 import { RoomStatus } from "@/components/room-status";
+import { FloorPlanMap, type PlanMarker } from "@/components/floor-plan-map";
+import { floorPlanFor } from "@/lib/floor-plans";
 import { TableTimeline } from "@/components/table-timeline";
 import { buildTimeline } from "@/lib/domain/table-timeline";
 import { splitCustomerType } from "@/lib/domain/request-tags";
@@ -102,6 +104,11 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           details,
         })
       : null;
+  const plan = floorPlanFor(restaurant.slug);
+  const stateById = new Map(rooms.flatMap((r) => r.tables.map((x) => [x.id, x.state] as const)));
+  const planMarkers: PlanMarker[] = cap.config.tables
+    .filter((x) => x.is_active && stateById.has(x.id))
+    .map((x) => ({ id: x.id, label: x.label, capacity: x.max_capacity, x: x.pos_x, y: x.pos_y, w: x.width, h: x.height, state: stateById.get(x.id)! }));
   const selected = rows.find((r) => r.date === date);
   const overDays = rows.filter((r) => r.status === "over").length;
   const fullDays = rows.filter((r) => r.status === "full").length;
@@ -273,7 +280,12 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               <Button asChild size="sm"><Link href={actionHref(slot.time)}>{canBook ? t("Book table") : t("Log a request")} · {slot.time}</Link></Button>
             ) : null}
           </div>
-          {board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
+          {board.ok && plan && planMarkers.length > 0 ? (
+            <div className="grid items-start gap-4 xl:grid-cols-2">
+              <FloorPlanMap plan={plan} markers={planMarkers} />
+              <RoomStatus rooms={rooms} t={t} guests={zoneGuests} />
+            </div>
+          ) : board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
         </CardContent>
       </Card>
 

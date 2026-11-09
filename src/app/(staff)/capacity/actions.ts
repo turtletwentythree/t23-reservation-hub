@@ -17,6 +17,8 @@ export async function saveCapacityAction(raw: unknown): Promise<ActionResult<und
         month: z.string().regex(/^\d{4}-\d{2}$/),
         default_capacity: cap,
         days: z.array(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), capacity: cap, note: z.string().max(200).nullable() })).max(31),
+        closed_days: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(31).optional(),
+        tables: z.array(z.object({ id: z.string().uuid(), max_capacity: z.number().int().min(1).max(200) })).max(200).default([]),
         zones: z.array(z.object({ area_id: z.string().uuid(), default_capacity: cap })).max(30).default([]),
         zone_days: z.array(z.object({ area_id: z.string().uuid(), day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), capacity: cap })).max(31 * 30).default([]),
       })
@@ -45,6 +47,43 @@ export async function saveCapacityAction(raw: unknown): Promise<ActionResult<und
       const { error } = await supabase.from("daily_capacity").delete().eq("restaurant_id", input.restaurant_id).in("day", clear);
       if (error) throw notInstalled(error.message);
     }
+    // Closed days (holidays): a date override with no service. Stops bookings and shows as Closed everywhere.
+    if (input.closed_days) {
+      const want = new Set(input.closed_days.filter((d) => inMonth.has(d)));
+      const days = [...inMonth].sort();
+      const { data: existing, error: eh } = await supabase
+        .from("operating_hours")
+        .select("id, specific_date")
+        .eq("restaurant_id", input.restaurant_id)
+        .eq("is_closed", true)
+        .gte("specific_date", days[0])
+        .lte("specific_date", days[days.length - 1]);
+      if (eh) throw new DomainError("validation", eh.message);
+      const have = new Map((existing ?? []).map((h) => [h.specific_date as string, h.id]));
+      const drop = [...have.entries()].filter(([d]) => !want.has(d)).map(([, id]) => id);
+      const add = [...want].filter((d) => !have.has(d));
+      if (drop.length) {
+        const { error } = await supabase.from("operating_hours").delete().in("id", drop);
+        if (error) throw new DomainError("validation", error.message);
+      }
+      if (add.length) {
+        const { error } = await supabase.from("operating_hours").insert(add.map((d) => ({ restaurant_id: input.restaurant_id, specific_date: d, is_closed: true, service_name: "Closed" })));
+        if (error) throw new DomainError("validation", error.message);
+      }
+    }
+
+    // Seats per table.
+    if (input.tables.length) {
+      const { data: current, error: et } = await supabase.from("tables").select("id, min_capacity").eq("restaurant_id", input.restaurant_id).in("id", input.tables.map((x) => x.id));
+      if (et) throw new DomainError("validation", et.message);
+      const minOf = new Map((current ?? []).map((x) => [x.id, x.min_capacity]));
+      for (const tb of input.tables) {
+        if (!minOf.has(tb.id)) throw new DomainError("validation", "Invalid table");
+        const { error } = await supabase.from("tables").update({ max_capacity: tb.max_capacity, min_capacity: Math.min(minOf.get(tb.id)!, tb.max_capacity) }).eq("id", tb.id).eq("restaurant_id", input.restaurant_id);
+        if (error) throw new DomainError("validation", error.message);
+      }
+    }
+
     if (input.zones.length || input.zone_days.length) {
       const ids = [...new Set([...input.zones.map((z) => z.area_id), ...input.zone_days.map((z) => z.area_id)])];
       const { data: owned, error: eo } = await supabase.from("restaurant_areas").select("id").eq("restaurant_id", input.restaurant_id).in("id", ids);

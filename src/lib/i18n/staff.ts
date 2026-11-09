@@ -692,6 +692,11 @@ const T: Record<string, Entry> = {
   "Tap a time to see the rooms.": { th: "กดเวลาเพื่อดูห้องและโต๊ะ", fr: "Touchez une heure pour voir les salles." },
   "Log a request": { th: "บันทึกเรื่องจอง", fr: "Saisir une demande" },
   // Zone capacity
+  "Seats per table": { th: "จำนวน seat ต่อโต๊ะ", fr: "Places par table" },
+  "Set how many seats each table has. Blank capacity above uses these seats.": { th: "กำหนดจำนวนที่นั่งของแต่ละโต๊ะ ถ้าไม่ได้กรอกจำนวนรับคนด้านบน ระบบจะใช้ผลรวมที่นั่งนี้", fr: "Définissez le nombre de places de chaque table. Sans chiffre ci-dessus, ces places sont utilisées." },
+  "Total seats": { th: "ที่นั่งรวม", fr: "Total des places" },
+  "Tap a green table to choose it. Red = already booked at this time.": { th: "กดโต๊ะสีเขียวเพื่อเลือก สีแดง = ถูกจองแล้วในเวลานี้", fr: "Touchez une table verte pour la choisir. Rouge = déjà réservée à cette heure." },
+  "Pick a time to see which tables are free.": { th: "เลือกเวลาเพื่อดูว่าโต๊ะไหนว่าง", fr: "Choisissez une heure pour voir les tables libres." },
   "Bookings by table": { th: "การจองแยกตามโต๊ะ", fr: "Réservations par table" },
   "Green = free, coloured block = booked time": { th: "สีเขียว = ว่าง · แถบสี = ช่วงเวลาที่ถูกจอง", fr: "Vert = libre, bloc coloré = heure réservée" },
   "Custom": { th: "กำหนดช่วง", fr: "Personnalisé" },

@@ -5,19 +5,22 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, Star, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FloorPlanMap, type PlanMarker } from "@/components/floor-plan-map";
+import { floorPlanFor } from "@/lib/floor-plans";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   createReservationAction,
   getSlotsAction,
+  getTableStatusAction,
   searchCustomersAction,
   updateReservationAction,
   type SlotView,
 } from "./actions";
 import { linkRequestAction } from "../requests/actions";
 
-export type FormRestaurant = { id: string; name: string };
-export type FormTable = { id: string; label: string; max_capacity: number; restaurant_id: string; area?: string | null };
+export type FormRestaurant = { id: string; name: string; slug?: string };
+export type FormTable = { id: string; label: string; max_capacity: number; restaurant_id: string; area?: string | null; pos?: { x: number; y: number; w: number; h: number } };
 export type FormSource = { id: string; name: string; code: string };
 export type FormBookingType = { id: string; restaurant_id: string; name: string };
 
@@ -76,6 +79,39 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
   const restaurantTypes = bookingTypes.filter((b) => b.restaurant_id === v.restaurant_id);
   const selectedSlot = slots?.find((s) => s.time === v.reservation_time);
   const assignedCapacity = restaurantTables.filter((t) => v.table_ids.includes(t.id)).reduce((a, t) => a + t.max_capacity, 0);
+
+  const plan = floorPlanFor(restaurants.find((r) => r.id === v.restaurant_id)?.slug);
+  const [taken, setTaken] = useState<{ busy: Set<string>; out: Set<string> } | null>(null);
+  useEffect(() => {
+    if (!plan || !v.reservation_time || !v.reservation_date) {
+      setTaken(null);
+      return;
+    }
+    let live = true;
+    getTableStatusAction({ restaurantId: v.restaurant_id, date: v.reservation_date, time: v.reservation_time.slice(0, 5), partySize: Number(v.party_size) || 1, ignoreReservationId: v.id }).then((res) => {
+      if (live && res.ok) setTaken({ busy: new Set(res.data.busy), out: new Set(res.data.out) });
+    });
+    return () => {
+      live = false;
+    };
+  }, [plan, v.restaurant_id, v.reservation_date, v.reservation_time, v.party_size, v.id]);
+  const markers: PlanMarker[] = restaurantTables
+    .filter((x) => x.pos)
+    .map((x) => ({
+      id: x.id,
+      label: x.label,
+      capacity: x.max_capacity,
+      x: x.pos!.x,
+      y: x.pos!.y,
+      w: x.pos!.w,
+      h: x.pos!.h,
+      state: taken?.out.has(x.id) ? "out" : taken?.busy.has(x.id) && !v.table_ids.includes(x.id) ? "booked" : "free",
+      selected: v.table_ids.includes(x.id),
+    }));
+  const pickOnPlan = (id: string) => {
+    setManualTables(true);
+    setV((p) => ({ ...p, table_ids: p.table_ids.includes(id) ? p.table_ids.filter((x) => x !== id) : [...p.table_ids, id] }));
+  };
 
   const loadSlots = () => {
     if (!v.restaurant_id || !v.reservation_date || !v.party_size) return;
@@ -194,6 +230,15 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
             <input type="checkbox" checked={manualTables} onChange={(e) => setManualTables(e.target.checked)} />{" "}{t("Choose manually")}
           </label>
         </div>
+        {plan && markers.length > 0 ? (
+          <div className="mb-3 space-y-1.5">
+            <FloorPlanMap plan={plan} markers={markers} onPick={pickOnPlan} />
+            <p className="text-xs text-muted">
+              {v.reservation_time ? t("Tap a green table to choose it. Red = already booked at this time.") : t("Pick a time to see which tables are free.")}
+              {v.table_ids.length ? ` · ${assignedCapacity} ${t("seats")}` : ""}
+            </p>
+          </div>
+        ) : null}
         {!manualTables ? (
           <div className="flex flex-wrap gap-1.5">
             {selectedSlot?.options.length ? (

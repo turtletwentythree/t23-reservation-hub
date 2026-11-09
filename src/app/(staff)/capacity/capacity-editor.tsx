@@ -9,11 +9,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { saveCapacityAction } from "./actions";
 
-type Day = { day: string; booked: number; waiting: number; capacity: number | null; note: string };
+type Day = { day: string; booked: number; waiting: number; capacity: number | null; note: string; closed: boolean };
 
 const num = (s: string): number | null => (s.trim() === "" ? null : Math.max(0, Math.min(5000, Math.round(Number(s)) || 0)));
 
-export function CapacityEditor({ restaurantId, month, today, locale, tableSeats, defaultCapacity, days, zones, zoneDays }: {
+export function CapacityEditor({ restaurantId, month, today, locale, tableSeats, defaultCapacity, days, zones, zoneDays, tableList }: {
   restaurantId: string;
   month: string;
   today: string;
@@ -21,6 +21,7 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
   tableSeats: number;
   defaultCapacity: number | null;
   days: Day[];
+  tableList: { id: string; label: string; zone: string; seats: number }[];
   zones: { id: string; name: string; defaultCapacity: number | null; tableSeats: number }[];
   zoneDays: { day: string; cells: Record<string, { value: number | null; booked: number }> }[];
 }) {
@@ -30,6 +31,9 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
   const [def, setDef] = useState(defaultCapacity === null ? "" : String(defaultCapacity));
   const [rows, setRows] = useState(days.map((d) => ({ ...d, value: d.capacity === null ? "" : String(d.capacity) })));
   const [fill, setFill] = useState("");
+  const [tseats, setTseats] = useState<Record<string, string>>(Object.fromEntries(tableList.map((x) => [x.id, String(x.seats)])));
+  const tableDirty = tableList.some((x) => tseats[x.id] !== String(x.seats));
+  const closedNow = (r: { closed: boolean }) => r.closed;
   const str = (n: number | null) => (n === null ? "" : String(n));
   const [zdef, setZdef] = useState<Record<string, string>>(Object.fromEntries(zones.map((z) => [z.id, str(z.defaultCapacity)])));
   const [zval, setZval] = useState<Record<string, string>>(
@@ -42,7 +46,7 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
     zones.some((z) => zdef[z.id] !== str(z.defaultCapacity)) ||
     zoneDays.some((d) => zones.some((z) => zval[`${z.id}|${d.day}`] !== str(d.cells[z.id]?.value ?? null)));
   const base = num(def) ?? tableSeats;
-  const dirty = def !== (defaultCapacity === null ? "" : String(defaultCapacity)) || rows.some((r, i) => r.value !== (days[i].capacity === null ? "" : String(days[i].capacity)) || r.note !== days[i].note) || zoneDirty;
+  const dirty = def !== (defaultCapacity === null ? "" : String(defaultCapacity)) || rows.some((r, i) => r.value !== (days[i].capacity === null ? "" : String(days[i].capacity)) || r.note !== days[i].note || r.closed !== days[i].closed) || zoneDirty || tableDirty;
 
   const setRow = (i: number, patch: Partial<(typeof rows)[number]>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
@@ -53,6 +57,8 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
         month,
         default_capacity: num(def),
         days: rows.map((r) => ({ day: r.day, capacity: num(r.value), note: r.note.trim() || null })),
+        closed_days: rows.filter(closedNow).map((r) => r.day),
+        tables: tableDirty ? tableList.filter((x) => tseats[x.id] !== String(x.seats)).map((x) => ({ id: x.id, max_capacity: Math.max(1, num(tseats[x.id] ?? "") ?? x.seats) })) : [],
         zones: zoneDirty ? zones.map((z) => ({ area_id: z.id, default_capacity: num(zdef[z.id] ?? "") })) : [],
         zone_days: !zoneDirty ? [] : zoneDays.flatMap((d) => zones.map((z) => ({ area_id: z.id, day: d.day, capacity: num(zval[`${z.id}|${d.day}`] ?? "") }))),
       });
@@ -97,6 +103,7 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
                 r.day < today && "opacity-60",
                 r.day === today && "ring-2 ring-brand-400",
                 r.value !== "" && "border-brand-300 bg-brand-50/40",
+                r.closed && "border-red-300 bg-red-50"
               )}
             >
               <div className="flex items-baseline justify-between">
@@ -112,6 +119,10 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
                 aria-label={`${t("Guests per day")} ${r.day}`}
                 className="mt-1 h-8 text-center tabular-nums"
               />
+              <label className={cn("mt-1 flex cursor-pointer items-center justify-center gap-1 text-[11px]", r.closed ? "font-semibold text-red-700" : "text-muted")}>
+                <input type="checkbox" checked={r.closed} onChange={(e) => setRow(i, { closed: e.target.checked })} />
+                {t("Closed")}
+              </label>
               <p className={cn("mt-1 text-center text-[11px] tabular-nums", over ? "font-semibold text-red-700" : full ? "text-amber-700" : "text-muted")}>
                 {t("Booked")} {r.booked}/{cap}
                 {r.waiting ? <span className="text-accent-700"> +{r.waiting}</span> : null}
@@ -127,6 +138,32 @@ export function CapacityEditor({ restaurantId, month, today, locale, tableSeats,
           );
         })}
       </div>
+
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <div>
+            <p className="font-semibold text-slate-900">{t("Seats per table")}</p>
+            <p className="text-xs text-muted">{t("Set how many seats each table has. Blank capacity above uses these seats.")}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[...new Set(tableList.map((x) => x.zone))].map((zone) => (
+              <div key={zone} className="space-y-1.5 rounded-xl border bg-white p-3">
+                <p className="text-sm font-semibold text-slate-900">{zone}</p>
+                {tableList.filter((x) => x.zone === zone).map((x) => (
+                  <label key={x.id} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-slate-700">{x.label}</span>
+                    <span className="flex items-center gap-1.5">
+                      <Input type="number" min={1} max={200} value={tseats[x.id] ?? ""} onChange={(e) => setTseats((m) => ({ ...m, [x.id]: e.target.value }))} className="h-8 w-20 text-center tabular-nums" aria-label={`${x.label} ${t("seats")}`} />
+                      <span className="text-xs text-muted">{t("seats")}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted">{t("Total seats")}: <strong className="tabular-nums text-slate-800">{tableList.reduce((a, x) => a + (num(tseats[x.id] ?? "") ?? x.seats), 0)}</strong></p>
+        </CardContent>
+      </Card>
 
       {zones.length > 0 ? (
         <Card>

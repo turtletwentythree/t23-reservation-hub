@@ -27,6 +27,10 @@ export default async function CapacityPage({ searchParams }: { searchParams: Pro
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : today.slice(0, 7);
   const supabase = await createClient();
   const data = await loadCapacityMonth(supabase, restaurantId, month);
+  const monthStart = `${month}-01`;
+  const monthEnd = `${month}-${String(new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate()).padStart(2, "0")}`;
+  const { data: holidayRows } = await supabase.from("operating_hours").select("specific_date").eq("restaurant_id", restaurantId).eq("is_closed", true).gte("specific_date", monthStart).lte("specific_date", monthEnd);
+  const holidays = new Set((holidayRows ?? []).map((h) => h.specific_date as string));
   const zm = await loadZoneMonth(supabase, restaurantId, month, data.config);
   const link = (m: string) => `/capacity?restaurant=${restaurantId}&month=${m}`;
   const monthLabel = new Date(`${month}-01T12:00:00Z`).toLocaleDateString(STAFF_DATE_LOCALES[locale], { month: "long", year: "numeric", timeZone: "UTC" });
@@ -73,12 +77,16 @@ export default async function CapacityPage({ searchParams }: { searchParams: Pro
           day: r.date,
           cells: Object.fromEntries(zm.zones.map((z) => [z.id, { value: zm.overrides.get(`${z.id}|${r.date}`) ?? null, booked: zm.paxOf(z.id, r.date) }])),
         }))}
+        tableList={data.config.tables
+          .filter((x) => x.is_active)
+          .map((x) => ({ id: x.id, label: x.label, zone: zm.zones.find((z) => z.id === x.area_id)?.name ?? "—", seats: x.max_capacity }))}
         tableSeats={data.seatsFromTables}
         defaultCapacity={data.settings.defaultCapacity}
         days={data.rows.map((r) => ({
           day: r.date,
           booked: r.total,
           waiting: r.waiting,
+          closed: holidays.has(r.date),
           capacity: data.settings.overrides.get(r.date)?.capacity ?? null,
           note: data.settings.overrides.get(r.date)?.note ?? "",
         }))}
