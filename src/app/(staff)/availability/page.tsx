@@ -12,6 +12,9 @@ import { shiftMonth, type CapacityStatus } from "@/lib/domain/capacity-check";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/domain/request-tags";
 import { loadAreas, loadCapacityMonth, loadZoneMonth } from "@/lib/data/capacity";
 import { RoomStatus } from "@/components/room-status";
+import { TableTimeline } from "@/components/table-timeline";
+import { buildTimeline } from "@/lib/domain/table-timeline";
+import { splitCustomerType } from "@/lib/domain/request-tags";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -79,6 +82,26 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
     : 0;
   const slot = board.ok ? board.slots[slotIdx] : undefined;
   const rooms = board.ok ? summarizeRooms(board, new Map(cap.config.tables.map((x) => [x.id, x.area_id])), areas, slotIdx) : [];
+  // Who is booked on which table, and when.
+  const resIds = [...new Set(occupancy.map((o) => o.reservation_id))];
+  const { data: resDetail } = resIds.length
+    ? await supabase.from("reservations").select("id, customer_name, party_size, status, internal_notes").in("id", resIds)
+    : { data: [] };
+  const details = new Map((resDetail ?? []).map((r) => [r.id, { name: r.customer_name, party: r.party_size, type: splitCustomerType(r.internal_notes).type, status: r.status }]));
+  const timeline =
+    board.ok && board.slots.length
+      ? buildTimeline({
+          date,
+          timezone: restaurant.timezone,
+          firstSlot: board.slots[0].time,
+          lastSlot: board.slots[board.slots.length - 1].time,
+          durationMinutes: board.durationMinutes,
+          tables: board.rows.map((r) => ({ id: r.id, label: r.label, capacity: r.capacity, areaId: cap.config.tables.find((x) => x.id === r.id)?.area_id ?? null, out: !r.usable })),
+          areas,
+          occupancy,
+          details,
+        })
+      : null;
   const selected = rows.find((r) => r.date === date);
   const overDays = rows.filter((r) => r.status === "over").length;
   const fullDays = rows.filter((r) => r.status === "full").length;
@@ -253,6 +276,23 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           {board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
         </CardContent>
       </Card>
+
+      {timeline ? (
+        <Card>
+          <CardContent className="space-y-3 pt-4">
+            <div>
+              <p className="font-semibold text-slate-900">{t("Bookings by table")}</p>
+              <p className="text-sm text-muted">{fmt(date, { weekday: "short", day: "numeric", month: "short" })} · {t("Green = free, coloured block = booked time")}</p>
+            </div>
+            <TableTimeline
+              timeline={timeline}
+              t={t}
+              typeLabel={(k) => (k === "other" ? t("Other") : CUSTOMER_TYPE_LABELS[k as keyof typeof CUSTOMER_TYPE_LABELS] ?? k)}
+              linkTo={ctx.pages.includes("reservations") && roleCan(ctx.role, "reservation.view") ? (id) => `/reservations/${id}` : null}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

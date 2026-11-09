@@ -692,6 +692,8 @@ const T: Record<string, Entry> = {
   "Tap a time to see the rooms.": { th: "กดเวลาเพื่อดูห้องและโต๊ะ", fr: "Touchez une heure pour voir les salles." },
   "Log a request": { th: "บันทึกเรื่องจอง", fr: "Saisir une demande" },
   // Zone capacity
+  "Bookings by table": { th: "การจองแยกตามโต๊ะ", fr: "Réservations par table" },
+  "Green = free, coloured block = booked time": { th: "สีเขียว = ว่าง · แถบสี = ช่วงเวลาที่ถูกจอง", fr: "Vert = libre, bloc coloré = heure réservée" },
   "Custom": { th: "กำหนดช่วง", fr: "Personnalisé" },
   "Average per day": { th: "เฉลี่ยต่อวัน", fr: "Moyenne par jour" },
   "Day by day": { th: "รายวัน", fr: "Jour par jour" },
