@@ -5,7 +5,10 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, todayIn } from "@/lib/data/common";
-import { loadCapacityMonth } from "@/lib/data/capacity";
+import { loadAreas, loadCapacityMonth } from "@/lib/data/capacity";
+import { loadOccupancy } from "@/lib/domain/reservation-service";
+import { buildAvailabilityBoard, summarizeRooms } from "@/lib/domain/availability-board";
+import { RoomStatus } from "@/components/room-status";
 import { shiftMonth, type CapacityDay } from "@/lib/domain/capacity-check";
 import { CUSTOMER_TYPE_LABELS, splitCustomerType } from "@/lib/domain/request-tags";
 import { Card, CardContent, CardHeader, CardTitle, EmptyState, PageHeader } from "@/components/ui/card";
@@ -58,6 +61,20 @@ export async function InterimDashboard({ ctx, restaurantParam }: { ctx: StaffCon
       .order("requested_time")
       .limit(8),
   ]);
+  const [occupancy, areas] = await Promise.all([loadOccupancy(supabase, restaurantId, today, restaurant.timezone), loadAreas(supabase, restaurantId)]);
+  const board = buildAvailabilityBoard({
+    date: today,
+    partySize: 1,
+    timezone: restaurant.timezone,
+    policy: cur.config.policy,
+    hours: cur.config.hours,
+    tables: cur.config.tables,
+    combinations: cur.config.combinations,
+    occupancy,
+    now: new Date(),
+  });
+  const nowIdx = board.ok ? Math.max(0, board.slots.findIndex((s) => !s.past)) : 0;
+  const rooms = board.ok ? summarizeRooms(board, new Map(cur.config.tables.map((x) => [x.id, x.area_id])), areas, nowIdx) : [];
   const all = [...cur.rows, ...next.rows];
   const todayRow = all.find((r) => r.date === today)!;
   const coming = all.filter((r) => r.date >= today && r.date <= addDays(today, 13));
@@ -155,6 +172,16 @@ export async function InterimDashboard({ ctx, restaurantParam }: { ctx: StaffCon
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle>{t("Rooms and tables")}{board.ok ? ` · ${t("Today")} ${board.slots[nowIdx]?.time ?? ""}` : ""}</CardTitle>
+          <Link href={`/availability?restaurant=${restaurantId}`} className="text-sm font-medium text-brand-600 hover:underline">{t("Table availability")}</Link>
+        </CardHeader>
+        <CardContent>
+          {board.ok ? <RoomStatus rooms={rooms} t={t} /> : <p className="py-3 text-center text-sm text-muted">{t("Closed on this day")}</p>}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">

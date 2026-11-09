@@ -7,10 +7,11 @@ import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam, todayIn } from "@/lib/data/common";
 import { loadOccupancy } from "@/lib/domain/reservation-service";
-import { buildAvailabilityBoard } from "@/lib/domain/availability-board";
+import { buildAvailabilityBoard, summarizeRooms } from "@/lib/domain/availability-board";
 import { shiftMonth, type CapacityStatus } from "@/lib/domain/capacity-check";
 import { CUSTOMER_TYPE_LABELS } from "@/lib/domain/request-tags";
-import { loadCapacityMonth } from "@/lib/data/capacity";
+import { loadAreas, loadCapacityMonth } from "@/lib/data/capacity";
+import { RoomStatus } from "@/components/room-status";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,11 +54,12 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today;
   const monthParam = pickParam(sp.month);
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : date.slice(0, 7);
+  const timeParam = pickParam(sp.time);
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
 
   const supabase = await createClient();
   const cap = await loadCapacityMonth(supabase, restaurantId, month);
-  const occupancy = await loadOccupancy(supabase, restaurantId, date, restaurant.timezone);
+  const [occupancy, areas] = await Promise.all([loadOccupancy(supabase, restaurantId, date, restaurant.timezone), loadAreas(supabase, restaurantId)]);
   const rows = cap.rows;
   const board = buildAvailabilityBoard({
     date,
@@ -70,6 +72,11 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
     occupancy,
     now: new Date(),
   });
+  const slotIdx = board.ok
+    ? Math.max(0, board.slots.findIndex((s) => (timeParam ? s.time === timeParam : !s.past)))
+    : 0;
+  const slot = board.ok ? board.slots[slotIdx] : undefined;
+  const rooms = board.ok ? summarizeRooms(board, new Map(cap.config.tables.map((x) => [x.id, x.area_id])), areas, slotIdx) : [];
   const selected = rows.find((r) => r.date === date);
   const overDays = rows.filter((r) => r.status === "over").length;
   const fullDays = rows.filter((r) => r.status === "full").length;
@@ -212,17 +219,14 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                 <>
                   <div className="grid grid-cols-4 gap-1.5">
                     {board.slots.map((s) => {
-                      const cls = cn("rounded-lg border px-1 py-1.5 text-center text-sm tabular-nums", SLOT[s.level]);
-                      return s.level !== "past" && (canBook || canRequest) ? (
-                        <Link key={s.time} href={actionHref(s.time)} className={cn(cls, "hover:ring-2 hover:ring-brand-300")}>{s.time}</Link>
-                      ) : (
-                        <span key={s.time} className={cls}>{s.time}</span>
+                      const cls = cn("rounded-lg border px-1 py-1.5 text-center text-sm tabular-nums", SLOT[s.level], s.time === slot?.time && "ring-2 ring-brand-500");
+                      return (
+                        <Link key={s.time} href={q({ time: s.time })} className={cn(cls, "hover:ring-2 hover:ring-brand-300")}>{s.time}</Link>
                       );
                     })}
                   </div>
                   <p className="text-xs text-muted">
-                    {t("green = table free, red = full")}
-                    {canBook ? ` · ${t("Tap a time to make a booking.")}` : canRequest ? ` · ${t("Tap a time to log a booking request for the store.")}` : ""}
+                    {t("green = table free, red = full")} · {t("Tap a time to see the rooms.")}
                   </p>
                 </>
               )}
@@ -230,6 +234,23 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold text-slate-900">{t("Rooms and tables")}</p>
+              <p className="text-sm text-muted">
+                {fmt(date, { weekday: "short", day: "numeric", month: "short" })}{slot ? ` · ${slot.time}` : ""}
+              </p>
+            </div>
+            {slot && slot.level !== "past" && (canBook || canRequest) ? (
+              <Button asChild size="sm"><Link href={actionHref(slot.time)}>{canBook ? t("Book table") : t("Log a request")} · {slot.time}</Link></Button>
+            ) : null}
+          </div>
+          {board.ok ? <RoomStatus rooms={rooms} t={t} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
+        </CardContent>
+      </Card>
     </div>
   );
 }

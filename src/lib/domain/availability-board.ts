@@ -105,3 +105,53 @@ export function buildAvailabilityBoard(args: {
 
   return { ok: true, durationMinutes: duration, intervalMinutes: interval, slots, rows };
 }
+
+export interface RoomTable {
+  id: string;
+  label: string;
+  capacity: number;
+  state: "free" | "booked" | "out";
+}
+
+export interface RoomSummary {
+  id: string | null;
+  name: string;
+  tables: RoomTable[];
+  /** Tables that can be used (not out of service). */
+  total: number;
+  free: number;
+  booked: number;
+  seats: number;
+  freeSeats: number;
+}
+
+/** Group the board rows by room (area) for one time slot: tables, free and booked. */
+export function summarizeRooms(
+  board: Extract<Board, { ok: true }>,
+  tableAreas: Map<string, string | null>,
+  areas: { id: string; name: string; sort_order: number }[],
+  slotIndex: number,
+): RoomSummary[] {
+  const order = [...areas].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  const groups: { id: string | null; name: string }[] = order.map((a) => ({ id: a.id, name: a.name }));
+  if (board.rows.some((r) => !tableAreas.get(r.id))) groups.push({ id: null, name: "—" });
+  return groups
+    .map((g) => {
+      const tables: RoomTable[] = board.rows
+        .filter((r) => (tableAreas.get(r.id) ?? null) === g.id)
+        .map((r) => ({ id: r.id, label: r.label, capacity: r.capacity, state: !r.usable ? "out" : r.busy[slotIndex] ? "booked" : "free" }));
+      const usable = tables.filter((x) => x.state !== "out");
+      const free = usable.filter((x) => x.state === "free");
+      return {
+        id: g.id,
+        name: g.name,
+        tables,
+        total: usable.length,
+        free: free.length,
+        booked: usable.length - free.length,
+        seats: usable.reduce((a, x) => a + x.capacity, 0),
+        freeSeats: free.reduce((a, x) => a + x.capacity, 0),
+      };
+    })
+    .filter((r) => r.tables.length > 0);
+}

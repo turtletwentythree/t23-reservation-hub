@@ -684,6 +684,13 @@ const T: Record<string, Entry> = {
   "Green: a table is free for this party size. Red: full. Both the Call Center and the store see the same live view.": { th: "สีเขียว = มีโต๊ะว่างสำหรับจำนวนคนนี้ สีแดง = เต็ม คอลเซ็นเตอร์และหน้าร้านเห็นข้อมูลเดียวกันแบบเรียลไทม์", fr: "Vert : une table est libre pour ce nombre. Rouge : complet. Le centre d'appels et l'établissement voient la même vue en direct." },
   "Guest name is required": { th: "กรุณาใส่ชื่อลูกค้า", fr: "Le nom du client est obligatoire" },
   "Guests this day": { th: "จำนวนลูกค้าวันนี้", fr: "Couverts du jour" },
+  // Rooms and tables
+  "Rooms and tables": { th: "ห้องและโต๊ะ", fr: "Salles et tables" },
+  "No tables set up yet.": { th: "ยังไม่ได้ตั้งค่าโต๊ะ", fr: "Aucune table configurée." },
+  "Free tables": { th: "โต๊ะว่าง", fr: "Tables libres" },
+  "Booked tables": { th: "โต๊ะที่ถูกจองแล้ว", fr: "Tables réservées" },
+  "Tap a time to see the rooms.": { th: "กดเวลาเพื่อดูห้องและโต๊ะ", fr: "Touchez une heure pour voir les salles." },
+  "Log a request": { th: "บันทึกเรื่องจอง", fr: "Saisir une demande" },
   // Interim dashboard and daily capacity
   "Daily capacity": { th: "กำหนดรับคนต่อวัน", fr: "Capacité journalière" },
   "How many guests this restaurant accepts each day. The Call Center and the store see FULL / OVER CAP against this number.": { th: "จำนวนลูกค้าที่ร้านรับได้ในแต่ละวัน คอลเซ็นเตอร์และหน้าร้านจะเห็นสถานะ FULL / OVER CAP เทียบกับตัวเลขนี้", fr: "Nombre de clients acceptés par jour. Le centre d'appels et l'établissement voient FULL / OVER CAP par rapport à ce chiffre." },

@@ -56,3 +56,14 @@ export async function loadCapacityMonth(supabase: Client, restaurantId: string, 
   });
   return { rows, config: cfg, settings, base, seatsFromTables, notes: settings.overrides };
 }
+
+/** Rooms (areas) of a restaurant, in display order. */
+export async function loadAreas(supabase: Parameters<typeof loadCapacitySettings>[0], restaurantId: string) {
+  const { data } = await supabase
+    .from("restaurant_areas")
+    .select("id, name, sort_order")
+    .eq("restaurant_id", restaurantId)
+    .eq("is_active", true)
+    .order("sort_order");
+  return data ?? [];
+}
