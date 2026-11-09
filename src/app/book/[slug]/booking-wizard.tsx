@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { CalendarDays, Clock, Users, ChevronLeft, Minus, Plus } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { CalendarDays, Clock, Users, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
@@ -31,6 +31,44 @@ function addDays(date: string, n: number) {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
+type Fmt = (d: string, opts: Intl.DateTimeFormatOptions) => string;
+
+/** Full month grid (Monday first) with month navigation, limited to [min, max]. */
+function MonthCalendar({ value, onChange, min, max, fmt }: { value: string; onChange: (d: string) => void; min: string; max: string; fmt: Fmt }) {
+  const [month, setMonth] = useState(value.slice(0, 7));
+  const [y, m] = month.split("-").map(Number);
+  const first = `${month}-01`;
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const lead = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+  const shift = (n: number) => setMonth(addDays(`${month}-15`, n * 30).slice(0, 7));
+  const canPrev = month > min.slice(0, 7);
+  const canNext = month < max.slice(0, 7);
+  // 2024-01-01 is a Monday; used only to label weekday headers.
+  const weekdays = Array.from({ length: 7 }, (_, i) => fmt(addDays("2024-01-01", i), { weekday: "short" }));
+  return (
+    <div className="rounded-xl border bg-white p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" onClick={() => shift(-1)} disabled={!canPrev} aria-label="Previous month" className="grid size-8 place-items-center rounded-lg border disabled:opacity-30"><ChevronLeft className="size-4" /></button>
+        <span className="text-sm font-semibold">{fmt(first, { month: "long", year: "numeric" })}</span>
+        <button type="button" onClick={() => shift(1)} disabled={!canNext} aria-label="Next month" className="grid size-8 place-items-center rounded-lg border disabled:opacity-30"><ChevronRight className="size-4" /></button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {weekdays.map((w) => <span key={w} className="py-1 text-[11px] font-medium uppercase text-muted">{w}</span>)}
+        {Array.from({ length: lead }, (_, i) => <span key={`e${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const d = `${month}-${String(i + 1).padStart(2, "0")}`;
+          const disabled = d < min || d > max;
+          return (
+            <button key={d} type="button" disabled={disabled} onClick={() => onChange(d)}
+              className={cn("aspect-square rounded-lg text-sm", value === d ? "bg-brand-500 font-semibold text-white" : disabled ? "text-gray-300" : "hover:bg-brand-50", d === min && value !== d && "ring-1 ring-brand-300")}>
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function BookingWizard(p: Props) {
   const [locale, setLocale] = useState<Locale>(p.initialLocale);
@@ -52,7 +90,6 @@ export function BookingWizard(p: Props) {
   const [submitting, startSubmit] = useTransition();
   const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, marketing_consent: false, website: "" });
 
-  const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(p.today, i)).filter((d) => d <= p.maxDate), [p.today, p.maxDate]);
   const selectedType = p.bookingTypes.find((b) => b.id === typeId);
   const depositAmount = selectedType?.deposit_override != null
     ? selectedType.deposit_override * party
@@ -142,16 +179,8 @@ export function BookingWizard(p: Props) {
           </section>
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><CalendarDays className="size-4 text-brand-600" /> {t.date}</p>
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-              {days.map((d) => (
-                <button key={d} type="button" onClick={() => setDate(d)} className={cn("flex w-14 shrink-0 flex-col items-center rounded-xl border py-2", date === d ? "border-brand-500 bg-brand-500 text-white" : "bg-white")}>
-                  <span className="text-[11px] uppercase opacity-80">{fmtDate(d, { weekday: "short" })}</span>
-                  <span className="text-lg font-semibold leading-tight">{Number(d.slice(8))}</span>
-                  <span className="text-[10px] opacity-80">{fmtDate(d, { month: "short" })}</span>
-                </button>
-              ))}
-            </div>
-            <Input type="date" className="mt-2 w-44" min={p.today} max={p.maxDate} value={date} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label={t.date} />
+            <MonthCalendar value={date} onChange={setDate} min={p.today} max={p.maxDate} fmt={fmtDate} />
+            <p className="mt-2 text-sm text-muted">{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </section>
           {p.bookingTypes.length > 1 ? (
             <section>
