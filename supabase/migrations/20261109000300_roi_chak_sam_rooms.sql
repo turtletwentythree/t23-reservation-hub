@@ -10,7 +10,7 @@ begin
   select id into r from public.restaurants where slug = 'roi-chak-sam';
   if r is null then raise notice 'Roi Chak Sam not found'; return; end if;
 
-  -- Switch off whatever was there before.
+  -- Switch off whatever was there before (this also removes the old 'Main 4').
   update public.tables set is_active = false where restaurant_id = r;
   update public.restaurant_areas set is_active = false where restaurant_id = r;
 
@@ -26,10 +26,9 @@ begin
   select r, v.area, v.label, v.mn, v.mx, 'rect', false, v.srt, true
   from (values
     ('VIP',     a_vip,   14, 18, 1),   -- one long table, 14-18 seats
-    ('Main 1',  a_main,   2,  4, 2),   -- 4 tables, max 18 seats in total
-    ('Main 2',  a_main,   2,  4, 3),
-    ('Main 3',  a_main,   2,  5, 4),
-    ('Main 4',  a_main,   2,  5, 5),
+    ('Main 1',  a_main,   2,  6, 2),   -- 3 tables, max 18 seats in total
+    ('Main 2',  a_main,   2,  6, 3),
+    ('Main 3',  a_main,   2,  6, 4),
     ('Front 1', a_front,  1,  2, 6),   -- 3 tables, max 10 seats in total
     ('Front 2', a_front,  2,  4, 7),
     ('Front 3', a_front,  2,  4, 8)

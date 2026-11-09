@@ -8,6 +8,9 @@ begin
   select id into r from public.restaurants where slug = 'roi-chak-sam';
   if r is null then return; end if;
 
+  -- There is no Main 4: switch it off if it was created before.
+  update public.tables set is_active = false where restaurant_id = r and label = 'Main 4';
+
   update public.restaurant_areas set canvas_width = 1448, canvas_height = 1086 where restaurant_id = r;
 
   update public.tables t set pos_x = v.x, pos_y = v.y, width = v.w, height = v.h
@@ -15,8 +18,7 @@ begin
     ('VIP',     380, 275, 330, 60),
     ('Main 1',  885, 375,  90, 65),
     ('Main 2', 1030, 375,  90, 65),
-    ('Main 3',  885, 575,  90, 65),
-    ('Main 4', 1030, 575,  90, 65),
+    ('Main 3',  957, 575,  90, 65),
     ('Front 1', 858, 895,  75, 55),
     ('Front 2',1085, 895,  70, 55),
     ('Front 3', 975, 966,  70, 32)
