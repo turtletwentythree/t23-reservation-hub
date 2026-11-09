@@ -25,6 +25,8 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const date = pickParam(sp.date) ?? "";
   const mine = pickParam(sp.mine) === "1";
   const canHandle = roleCan(ctx.role, "request.handle");
+  // Store staff only book what comes in; the Call Center (and Admin, for testing) log new requests.
+  const showForm = !canHandle || ctx.role === "super_admin";
   const supabase = await createClient();
 
   let q = supabase.from("booking_requests").select("*").in("restaurant_id", ids).order("created_at", { ascending: false }).limit(200);
@@ -113,8 +115,8 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           : t("Log phone and LINE booking requests here. The store books the table and you can follow the status.")}
       />
 
-      <div className={canHandle ? "space-y-3" : "grid gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]"}>
-        {canHandle ? null : <Card className="h-fit">
+      <div className={showForm ? "grid gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]" : "space-y-3"}>
+        {!showForm ? null : <Card className="h-fit">
           <CardContent className="pt-4">
             <h2 className="mb-3 font-semibold text-slate-900">{t("New booking request")}</h2>
             <RequestForm restaurants={ctx.restaurants.filter((r) => ids.includes(r.id)).map((r) => ({ id: r.id, name: r.name }))} initial={prefill} />
