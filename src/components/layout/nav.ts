@@ -58,7 +58,7 @@ export function parsePageAccess(raw: unknown): PageAccess {
 /** Pages this role may open, after the Admin's switches. */
 /** Pages a role starts with before the Admin changes anything. */
 export const DEFAULT_PAGES: Partial<Record<AppRole, PageKey[]>> = {
-  call_center: ["requests", "availability", "reservations", "calendar"],
+  call_center: ["requests", "availability"],
 };
 
 export function allowedPages(role: AppRole, access: PageAccess): PageKey[] {

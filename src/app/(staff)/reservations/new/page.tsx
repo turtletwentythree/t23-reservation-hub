@@ -6,6 +6,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { ReservationForm } from "../reservation-form";
 import { createClient } from "@/lib/supabase/server";
+import { splitCustomerType, withCustomerType } from "@/lib/domain/request-tags";
 
 export const metadata = { title: "New reservation" };
 
@@ -29,8 +30,12 @@ export default async function NewReservationPage({ searchParams }: { searchParam
     : { data: null };
   const sourceCode = walkIn ? "walk_in" : request?.channel === "line" ? "line" : "phone";
   const phoneSource = data.sources.find((s) => s.code === sourceCode);
+  const requestTag = splitCustomerType(request?.notes);
   const requestNote = request
-    ? [`${request.channel === "line" ? "LINE" : "Call"} request`, request.line_id ? `LINE ID: ${request.line_id}` : null].filter(Boolean).join(" · ")
+    ? withCustomerType(
+        requestTag.type ?? "internal",
+        [`${request.channel === "line" ? "LINE" : "Phone"} request`, request.line_id ? `LINE ID: ${request.line_id}` : null].filter(Boolean).join(" · "),
+      )
     : "";
   const [hh, mm] = formatInTimeZone(new Date(), DEFAULT_TZ, "HH:mm").split(":").map(Number);
   const roundedNow = `${String(hh).padStart(2, "0")}:${String(Math.floor(mm / 5) * 5).padStart(2, "0")}`;
@@ -48,6 +53,7 @@ export default async function NewReservationPage({ searchParams }: { searchParam
         <ReservationForm
           {...data}
           requestId={request?.status === "pending" ? request.id : undefined}
+          simple={Boolean(request)}
           initial={{
             restaurant_id: requestBranch ?? (pickParam(sp.restaurant) && data.restaurants.some((r) => r.id === pickParam(sp.restaurant)) ? pickParam(sp.restaurant)! : data.restaurants[0].id),
             customer_id: customer?.id,
@@ -64,7 +70,7 @@ export default async function NewReservationPage({ searchParams }: { searchParam
             special_occasion: "",
             dietary_requirements: customer?.dietary_preferences ?? "",
             allergies: customer?.allergies ?? "",
-            guest_notes: request?.notes ?? "",
+            guest_notes: request ? requestTag.notes : "",
             internal_notes: requestNote,
             deposit_amount: 0,
             status: walkIn ? "seated" : "confirmed",

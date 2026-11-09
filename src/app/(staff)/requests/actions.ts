@@ -6,6 +6,7 @@ import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { DomainError } from "@/lib/domain/reservation-service";
+import { CUSTOMER_TYPES, withCustomerType } from "@/lib/domain/request-tags";
 
 const optionalText = (max: number) =>
   z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : typeof v === "string" ? v.trim() : v), z.string().max(max).optional());
@@ -13,6 +14,7 @@ const optionalText = (max: number) =>
 const requestSchema = z.object({
   restaurant_id: z.string().uuid(),
   channel: z.enum(["call", "line"]),
+  customer_type: z.enum(CUSTOMER_TYPES),
   customer_name: z.string().trim().min(1, "Guest name is required").max(120),
   phone: optionalText(40),
   line_id: optionalText(80),
@@ -36,9 +38,10 @@ export async function createRequestAction(raw: unknown): Promise<ActionResult<{ 
     const supabase = await createClient();
     const { data: restaurant } = await supabase.from("restaurants").select("organization_id").eq("id", input.restaurant_id).maybeSingle();
     if (!restaurant) throw new DomainError("not_found", "Restaurant not found");
+    const { customer_type, ...rest } = input;
     const { data, error } = await supabase
       .from("booking_requests")
-      .insert({ ...input, phone: input.phone ?? null, line_id: input.line_id ?? null, notes: input.notes ?? null, organization_id: restaurant.organization_id })
+      .insert({ ...rest, phone: rest.phone ?? null, line_id: rest.line_id ?? null, notes: withCustomerType(customer_type, rest.notes), organization_id: restaurant.organization_id })
       .select("id")
       .single();
     if (error) throw missingTable(error.message);

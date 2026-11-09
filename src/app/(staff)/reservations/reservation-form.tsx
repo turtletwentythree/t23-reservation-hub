@@ -46,7 +46,7 @@ export type ReservationFormValues = {
   is_walk_in: boolean;
 };
 
-export function ReservationForm({ restaurants, tables, sources, bookingTypes, initial, onDone, requestId }: {
+export function ReservationForm({ restaurants, tables, sources, bookingTypes, initial, onDone, requestId, simple = false }: {
   restaurants: FormRestaurant[];
   tables: FormTable[];
   sources: FormSource[];
@@ -55,6 +55,8 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
   onDone?: (id: string) => void;
   /** When keying in a Call Center request: mark that request as booked once the reservation is saved. */
   requestId?: string;
+  /** Short form for the interim phone / LINE flow: only the fields the store needs to seat the guest. */
+  simple?: boolean;
 }) {
   const t = useT();
   const router = useRouter();
@@ -238,7 +240,7 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
       </section>
 
       <section className="space-y-3">
-        {!isEdit ? (
+        {!isEdit && !simple ? (
           <div className="relative">
             <Field label={t("Find existing guest (phone or name)")}>
               <div className="relative">
@@ -277,13 +279,20 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
           <Field label={t("Phone")}>
             <Input value={v.phone} onChange={(e) => set("phone", e.target.value)} inputMode="tel" />
           </Field>
-          <Field label={t("Email")}>
-            <Input type="email" value={v.email} onChange={(e) => set("email", e.target.value)} />
-          </Field>
+          {!simple ? (
+            <Field label={t("Email")}>
+              <Input type="email" value={v.email} onChange={(e) => set("email", e.target.value)} />
+            </Field>
+          ) : null}
         </div>
         {v.customer_id ? <p className="text-xs text-brand-700">{t("Linked to existing guest profile.")}</p> : null}
       </section>
 
+      {simple ? (
+        <Field label={t("Guest notes")}>
+          <Textarea rows={2} value={v.guest_notes} onChange={(e) => set("guest_notes", e.target.value)} />
+        </Field>
+      ) : <>
       <section className="grid gap-3 sm:grid-cols-4">
         <Field label={t("Source")}>
           <Select value={v.booking_source_id} onChange={(e) => set("booking_source_id", e.target.value)}>
@@ -342,6 +351,8 @@ export function ReservationForm({ restaurants, tables, sources, bookingTypes, in
           </Field>
         ) : null}
       </section>
+
+      </>}
 
       <div className="flex justify-end gap-2 border-t pt-4">
         <Button type="submit" disabled={saving}>{saving ? t("Saving…") : isEdit ? t("Save changes") : t("Create reservation")}</Button>

@@ -5,27 +5,42 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { addDays, pickParam, todayIn } from "@/lib/data/common";
-import { loadDayTotals, loadOccupancy, loadRestaurantConfig } from "@/lib/domain/reservation-service";
+import { pickParam, todayIn } from "@/lib/data/common";
+import { loadOccupancy, loadRestaurantConfig } from "@/lib/domain/reservation-service";
 import { buildAvailabilityBoard } from "@/lib/domain/availability-board";
-import { Card, CardContent, EmptyState, PageHeader, StatCard } from "@/components/ui/card";
+import { buildCapacityMonth, monthDays, type CapacityStatus } from "@/lib/domain/capacity-check";
+import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LiveRefresh } from "@/components/live-refresh";
-import { cn } from "@/lib/utils";
 import { AutoSubmitForm } from "@/components/auto-submit-form";
+import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Table availability" };
 
-const LEVEL = {
-  open: { label: "Available", cls: "border-emerald-300 bg-emerald-50 text-emerald-800" },
-  busy: { label: "Almost full", cls: "border-amber-300 bg-amber-50 text-amber-800" },
-  full: { label: "Full", cls: "border-red-300 bg-red-50 text-red-700" },
-  past: { label: "Passed", cls: "border-slate-200 bg-slate-50 text-slate-400" },
+const STATUS: Record<CapacityStatus, { label: string; cls: string }> = {
+  ok: { label: "OK", cls: "bg-emerald-100 text-emerald-800" },
+  full: { label: "FULL", cls: "bg-amber-100 text-amber-800" },
+  over: { label: "OVER CAP", cls: "bg-red-100 text-red-700" },
+  closed: { label: "Closed", cls: "bg-slate-100 text-slate-500" },
+};
+
+const SLOT = {
+  open: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  busy: "border-amber-300 bg-amber-50 text-amber-800",
+  full: "border-red-300 bg-red-50 text-red-700",
+  past: "border-slate-200 bg-slate-50 text-slate-400",
 } as const;
+
+function shiftMonth(month: string, by: number) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + by, 1));
+  return d.toISOString().slice(0, 7);
+}
 
 export default async function AvailabilityPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t, locale } = await getStaffT();
+  const dl = STAFF_DATE_LOCALES[locale];
   const ctx = await requireStaff("availability.view", "availability");
   const sp = await searchParams;
   const restaurantId = [pickParam(sp.restaurant), ctx.selectedBranch].find((x) => x && x !== "all" && ctx.restaurants.some((r) => r.id === x)) ?? ctx.restaurants[0]?.id;
@@ -34,39 +49,42 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const today = todayIn(restaurant.timezone);
   const dateParam = pickParam(sp.date);
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today;
+  const monthParam = pickParam(sp.month);
+  const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : date.slice(0, 7);
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
+  const days = monthDays(month);
 
   const supabase = await createClient();
   const config = await loadRestaurantConfig(supabase, restaurantId);
-  const [occupancy, totals, { data: areaRows }, requests] = await Promise.all([
+  const [occupancy, { data: resRows }, requests] = await Promise.all([
     loadOccupancy(supabase, restaurantId, date, restaurant.timezone),
-    loadDayTotals(supabase, restaurantId, date),
-    supabase.from("restaurant_areas").select("id, name, sort_order").eq("restaurant_id", restaurantId).order("sort_order"),
-    supabase.from("booking_requests").select("id").eq("restaurant_id", restaurantId).eq("requested_date", date).eq("status", "pending"),
+    supabase
+      .from("reservations")
+      .select("reservation_date, party_size, internal_notes")
+      .eq("restaurant_id", restaurantId)
+      .gte("reservation_date", days[0])
+      .lte("reservation_date", days[days.length - 1])
+      .not("status", "in", "(cancelled,no_show)"),
+    supabase
+      .from("booking_requests")
+      .select("requested_date, party_size")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "pending")
+      .gte("requested_date", days[0])
+      .lte("requested_date", days[days.length - 1]),
   ]);
-  // Next 14 days from the chosen week start: bookings and guests per day, for the quick date picker.
-  const stripStart = date < today ? date : addDays(date, -Math.min(3, Math.round((Date.parse(date) - Date.parse(today)) / 86_400_000)));
-  const stripDays = Array.from({ length: 14 }, (_, i) => addDays(stripStart, i));
-  const { data: stripRows } = await supabase
-    .from("reservations")
-    .select("reservation_date, party_size")
-    .eq("restaurant_id", restaurantId)
-    .gte("reservation_date", stripDays[0])
-    .lte("reservation_date", stripDays[13])
-    .not("status", "in", "(cancelled,no_show)");
-  const perDay = new Map<string, { b: number; g: number }>();
-  for (const r of stripRows ?? []) {
-    const d = perDay.get(r.reservation_date) ?? { b: 0, g: 0 };
-    d.b += 1;
-    d.g += r.party_size;
-    perDay.set(r.reservation_date, d);
-  }
-  const areaName = new Map((areaRows ?? []).map((a) => [a.id, a.name]));
-  const areaOrder = new Map((areaRows ?? []).map((a, i) => [a.id, i]));
-  const tables = [...config.tables]
-    .filter((tb) => tb.is_active)
-    .sort((a, b) => (areaOrder.get(a.area_id ?? "") ?? 99) - (areaOrder.get(b.area_id ?? "") ?? 99) || a.sort_order - b.sort_order)
-    .map((tb) => ({ ...tb, area: tb.area_id ? (areaName.get(tb.area_id) ?? null) : null }));
+
+  const usableTables = config.tables.filter((tb) => tb.is_active && tb.service_status !== "out_of_service");
+  const seats = usableTables.reduce((a, tb) => a + tb.max_capacity, 0);
+  const rows = buildCapacityMonth({
+    month,
+    seats,
+    hours: config.hours,
+    reservations: (resRows ?? []).map((r) => ({ date: r.reservation_date, party: r.party_size, notes: r.internal_notes })),
+    waiting: requests.error ? [] : (requests.data ?? []).map((r) => ({ date: r.requested_date, party: r.party_size })),
+  });
+  const sum = (k: "internal" | "kol" | "media" | "other") => rows.reduce((a, r) => a + r.pax[k], 0);
+  const overDays = rows.filter((r) => r.status === "over").length;
 
   const board = buildAvailabilityBoard({
     date,
@@ -74,184 +92,143 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
     timezone: restaurant.timezone,
     policy: config.policy,
     hours: config.hours,
-    tables,
+    tables: config.tables,
     combinations: config.combinations,
     occupancy,
     now: new Date(),
   });
+  const selected = rows.find((r) => r.date === date);
 
   const canBook = roleCan(ctx.role, "reservation.write") && ctx.pages.includes("reservations");
   const canRequest = roleCan(ctx.role, "request.create") && ctx.pages.includes("requests") && !canBook;
-  const pendingRequests = requests.error ? null : (requests.data ?? []).length;
-  const capB = config.policy.max_online_bookings_per_day;
-  const capC = config.policy.max_online_covers_per_day;
-  const link = (d: string) => `/availability?restaurant=${restaurantId}&date=${d}&party=${party}`;
+  const q = (over: Record<string, string | number>) =>
+    `/availability?${new URLSearchParams({ restaurant: restaurantId, month, date, party: String(party), ...Object.fromEntries(Object.entries(over).map(([k, v]) => [k, String(v)])) })}`;
   const actionHref = (time: string) =>
     canBook
       ? `/reservations/new?restaurant=${restaurantId}&date=${date}&time=${time}&party=${party}`
       : `/requests?restaurant=${restaurantId}&rdate=${date}&time=${time}&party=${party}`;
-
-  // Group slots by service (Lunch / Dinner) for the summary strip.
-  const services = board.ok ? [...new Set(board.slots.map((s) => s.service))] : [];
+  const fmtDay = (d: string, opts: Intl.DateTimeFormatOptions) => new Date(`${d}T12:00:00Z`).toLocaleDateString(dl, { timeZone: "UTC", ...opts });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <LiveRefresh tables={["reservations", "reservation_tables", "booking_requests"]} />
       <PageHeader
         title={`${t("Table availability")} · ${restaurant.name}`}
-        description={t("Green: a table is free for this party size. Red: full. Both the Call Center and the store see the same live view.")}
+        description={`${t("Seats per day")}: ${seats} · ${t("Tap a day to see free times.")}`}
         actions={
-          <AutoSubmitForm className="flex flex-wrap items-center gap-2">
-            {ctx.restaurants.length > 1 ? (
-              <Select name="restaurant" defaultValue={restaurantId} className="w-44" aria-label={t("Restaurant")}>
+          ctx.restaurants.length > 1 ? (
+            <AutoSubmitForm className="flex items-center gap-2">
+              <input type="hidden" name="month" value={month} />
+              <Select name="restaurant" defaultValue={restaurantId} className="w-48" aria-label={t("Restaurant")}>
                 {ctx.restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </Select>
-            ) : null}
-            <Input type="date" name="date" defaultValue={date} className="w-40" aria-label={t("Date")} />
-            <label className="flex items-center gap-1 text-sm text-slate-700">
-              {t("Guests")}
-              <Input type="number" name="party" min={1} max={200} defaultValue={party} className="w-20" />
-            </label>
-            <Button variant="outline">{t("Show")}</Button>
-          </AutoSubmitForm>
+            </AutoSubmitForm>
+          ) : null
         }
       />
 
-      <div className="flex items-center gap-2">
-        <Button asChild size="sm" variant="outline"><Link href={link(addDays(date, -1))} aria-label={t("Previous day")}><ChevronLeft /></Link></Button>
-        <Button asChild size="sm" variant={date === today ? "default" : "outline"}><Link href={link(today)}>{t("Today")}</Link></Button>
-        <Button asChild size="sm" variant="outline"><Link href={link(addDays(date, 1))} aria-label={t("Next day")}><ChevronRight /></Link></Button>
-        <span className="ml-2 text-sm font-medium text-slate-800">{new Date(`${date}T12:00:00Z`).toLocaleDateString(STAFF_DATE_LOCALES[locale], { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild size="sm" variant="outline"><Link href={q({ month: shiftMonth(month, -1), date: `${shiftMonth(month, -1)}-01` })} aria-label={t("Previous month")}><ChevronLeft /></Link></Button>
+        <span className="min-w-36 text-center font-semibold text-slate-900">{fmtDay(`${month}-01`, { month: "long", year: "numeric" })}</span>
+        <Button asChild size="sm" variant="outline"><Link href={q({ month: shiftMonth(month, 1), date: `${shiftMonth(month, 1)}-01` })} aria-label={t("Next month")}><ChevronRight /></Link></Button>
+        <Button asChild size="sm" variant="ghost"><Link href={q({ month: today.slice(0, 7), date: today })}>{t("Today")}</Link></Button>
+        <span className="ml-auto text-xs text-muted">
+          Internal {sum("internal")} · KOL {sum("kol")} · Media {sum("media")} · {t("Other")} {sum("other")}
+          {overDays ? <span className="ml-2 font-medium text-red-700">· OVER CAP {overDays} {t("days")}</span> : null}
+        </span>
       </div>
 
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-        {stripDays.map((d) => {
-          const c = perDay.get(d);
-          const [yy, mm, dd] = d.split("-").map(Number);
-          const dt = new Date(Date.UTC(yy, mm - 1, dd, 12));
-          return (
-            <Link
-              key={d}
-              href={link(d)}
-              className={cn(
-                "min-w-[4.25rem] shrink-0 rounded-lg border px-2 py-1.5 text-center text-xs",
-                d === date ? "border-brand-500 bg-brand-500 text-white" : d < today ? "bg-slate-50 text-slate-400" : "bg-white text-slate-700 hover:border-brand-400",
-              )}
-            >
-              <span className="block">{dt.toLocaleDateString(STAFF_DATE_LOCALES[locale], { weekday: "short", timeZone: "UTC" })}</span>
-              <span className="block text-base font-semibold tabular-nums">{dd}</span>
-              <span className="block text-[10px] opacity-80">{dt.toLocaleDateString(STAFF_DATE_LOCALES[locale], { month: "short", timeZone: "UTC" })}</span>
-              <span className="block text-[10px] tabular-nums opacity-90">{c ? `${c.b} ${t("bookings")} · ${c.g} ${t("guests")}` : "—"}</span>
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard label={t("Bookings this day")} value={totals.bookings} hint={capB ? `${t("online limit")} ${capB}` : undefined} tone="brand" />
-        <StatCard label={t("Guests this day")} value={totals.covers} hint={capC ? `${t("online limit")} ${capC}` : undefined} tone="brand" />
-        <StatCard label={t("Tables")} value={board.ok ? (board.slots[0]?.totalTables ?? tables.length) : tables.length} tone="slate" />
-        <StatCard
-          label={t("Requests waiting to be keyed in")}
-          value={pendingRequests ?? "—"}
-          tone={pendingRequests ? "accent" : "slate"}
-        />
-      </div>
-
-      {!board.ok ? (
-        <EmptyState title={board.reason === "closed" ? t("Closed on this day") : t("Invalid date")} description={t("Check another date, or the opening hours in Restaurants.")} />
-      ) : (
-        <>
-          <Card>
-            <CardContent className="space-y-4 pt-4">
-              <div className="flex flex-wrap items-center gap-3 text-xs">
-                <span className="font-medium text-slate-700">{t("Party of")} {party}:</span>
-                {(["open", "busy", "full", "past"] as const).map((k) => (
-                  <span key={k} className={cn("rounded-md border px-2 py-0.5", LEVEL[k].cls)}>{t(LEVEL[k].label)}</span>
-                ))}
-                <span className="text-muted">· {t("seating time")} {board.durationMinutes} {t("min")}</span>
-              </div>
-              {services.map((svc) => (
-                <div key={svc}>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">{t(svc)}</p>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-1.5">
-                    {board.slots.filter((s) => s.service === svc).map((s) => {
-                      const cell = (
-                        <>
-                          <span className="block font-semibold tabular-nums">{s.time}</span>
-                          <span className="block text-[11px]">{t(LEVEL[s.level].label)}</span>
-                          <span className="block text-[11px] opacity-80">{t("free")} {s.freeTables}/{s.totalTables}</span>
-                        </>
-                      );
-                      const cls = cn("rounded-lg border px-2 py-1.5 text-center text-sm", LEVEL[s.level].cls);
-                      return s.level !== "past" && (canBook || canRequest) ? (
-                        <Link key={s.time} href={actionHref(s.time)} className={cn(cls, "hover:ring-2 hover:ring-brand-300")} title={s.fitsParty ? s.bestLabels.join(" + ") : t("Full")}>
-                          {cell}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[40rem] text-sm">
+              <thead>
+                <tr className="border-b bg-slate-50 text-xs uppercase tracking-wide text-muted">
+                  <th className="px-3 py-2 text-left font-medium">{t("Date")}</th>
+                  <th className="px-2 py-2 text-right font-medium">Internal</th>
+                  <th className="px-2 py-2 text-right font-medium">KOL</th>
+                  <th className="px-2 py-2 text-right font-medium">Media</th>
+                  <th className="px-2 py-2 text-right font-medium">{t("Other")}</th>
+                  <th className="px-2 py-2 text-right font-medium">{t("Total")}</th>
+                  <th className="px-2 py-2 text-right font-medium">{t("Seats left")}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Status")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const st = STATUS[r.status];
+                  const isSel = r.date === date;
+                  const past = r.date < today;
+                  return (
+                    <tr key={r.date} className={cn("border-b last:border-0", isSel ? "bg-brand-50" : past ? "text-slate-400" : "hover:bg-slate-50")}>
+                      <td className="whitespace-nowrap px-3 py-1.5">
+                        <Link href={q({ date: r.date })} className="block font-medium tabular-nums">
+                          {fmtDay(r.date, { day: "numeric", month: "short" })} <span className="font-normal text-muted">{fmtDay(r.date, { weekday: "short" })}</span>
+                          {r.date === today ? <span className="ml-1 rounded bg-brand-500 px-1 text-[10px] text-white">{t("Today")}</span> : null}
                         </Link>
-                      ) : (
-                        <div key={s.time} className={cls} title={s.fitsParty ? s.bestLabels.join(" + ") : undefined}>{cell}</div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {canBook || canRequest ? (
-                <p className="text-xs text-muted">{canBook ? t("Tap a time to make a booking.") : t("Tap a time to log a booking request for the store.")}</p>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <p className="mb-2 text-sm font-medium text-slate-800">{t("Tables by time")}</p>
-              <p className="mb-3 text-xs text-muted">{t("Filled cells are booked. Each column is one booking interval.")}</p>
-              <div className="overflow-x-auto">
-                <table className="border-separate border-spacing-0 text-xs">
-                  <thead>
-                    <tr>
-                      <th className="sticky left-0 z-10 bg-white pr-3 text-left font-medium text-muted">{t("Table")}</th>
-                      {board.slots.map((s) => (
-                        <th key={s.time} className="px-0.5 pb-1 text-center font-normal tabular-nums text-muted">
-                          <span className="inline-block w-9">{s.time}</span>
-                        </th>
+                      </td>
+                      {(["internal", "kol", "media", "other"] as const).map((k) => (
+                        <td key={k} className="px-2 py-1.5 text-right tabular-nums">{r.pax[k] || <span className="text-slate-300">0</span>}</td>
                       ))}
+                      <td className="px-2 py-1.5 text-right font-semibold tabular-nums">
+                        {r.total}
+                        {r.waiting ? <span className="ml-1 text-xs font-normal text-accent-700" title={t("Waiting to be keyed in")}>+{r.waiting}</span> : null}
+                      </td>
+                      <td className={cn("px-2 py-1.5 text-right tabular-nums", r.left < 0 ? "font-semibold text-red-700" : "")}>{r.status === "closed" ? "—" : r.left}</td>
+                      <td className="px-3 py-1.5">
+                        <span className={cn("rounded-md px-1.5 py-0.5 text-xs font-semibold", st.cls)}>{t(st.label)}</span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {board.rows.map((r, ri) => {
-                      const newArea = ri === 0 || board.rows[ri - 1].area !== r.area;
-                      return [
-                        newArea && r.area ? (
-                          <tr key={`area-${r.id}`}>
-                            <td colSpan={board.slots.length + 1} className="sticky left-0 bg-white pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{r.area}</td>
-                          </tr>
-                        ) : null,
-                        <tr key={r.id}>
-                          <td className="sticky left-0 z-10 whitespace-nowrap bg-white py-0.5 pr-3 font-medium text-slate-800">
-                            {r.label} <span className="font-normal text-muted">({r.capacity})</span>
-                            {!r.usable ? <span className="ml-1 text-red-600">{t("out of service")}</span> : null}
-                          </td>
-                          {r.busy.map((b, i) => (
-                            <td key={i} className="px-0.5 py-0.5">
-                              <span
-                                className={cn(
-                                  "block h-5 w-9 rounded",
-                                  !r.usable ? "bg-slate-200" : b ? "bg-red-400" : board.slots[i].past ? "bg-slate-100" : "bg-emerald-100",
-                                )}
-                                title={`${r.label} ${board.slots[i].time}: ${!r.usable ? t("out of service") : b ? t("Booked") : t("Free")}`}
-                              />
-                            </td>
-                          ))}
-                        </tr>,
-                      ];
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="border-t px-3 py-2 text-xs text-muted">{t("+N = guests in requests still waiting for the store to key them in.")}</p>
+        </Card>
+
+        <Card className="h-fit xl:sticky xl:top-4">
+          <CardContent className="space-y-3 pt-4">
+            <div>
+              <p className="font-semibold text-slate-900">{fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}</p>
+              {selected && selected.status !== "closed" ? (
+                <p className="text-sm text-muted">
+                  {t("Booked")} {selected.total}/{seats} · {t("Seats left")} {selected.left}
+                </p>
+              ) : null}
+            </div>
+            <AutoSubmitForm className="flex items-center gap-2">
+              <input type="hidden" name="restaurant" value={restaurantId} />
+              <input type="hidden" name="month" value={month} />
+              <input type="hidden" name="date" value={date} />
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                {t("Guests")}
+                <Input type="number" name="party" min={1} max={200} defaultValue={party} className="h-8 w-20" />
+              </label>
+            </AutoSubmitForm>
+            {!board.ok ? (
+              <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {board.slots.map((s) => {
+                    const cls = cn("rounded-lg border px-1 py-1.5 text-center text-sm tabular-nums", SLOT[s.level]);
+                    return s.level !== "past" && (canBook || canRequest) ? (
+                      <Link key={s.time} href={actionHref(s.time)} className={cn(cls, "hover:ring-2 hover:ring-brand-300")}>{s.time}</Link>
+                    ) : (
+                      <span key={s.time} className={cls}>{s.time}</span>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted">
+                  {t("green = table free, red = full")}
+                  {canBook ? ` · ${t("Tap a time to make a booking.")}` : canRequest ? ` · ${t("Tap a time to log a booking request for the store.")}` : ""}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

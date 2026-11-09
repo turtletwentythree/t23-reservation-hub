@@ -8,6 +8,7 @@ import { useT, useStaffLocale } from "@/components/staff-locale";
 import { Badge, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cancelRequestAction, declineRequestAction } from "./actions";
+import { CUSTOMER_TYPE_LABELS, splitCustomerType } from "@/lib/domain/request-tags";
 
 export type RequestRow = {
   id: string;
@@ -63,6 +64,7 @@ export function RequestList({ rows, canHandle, userId, showRestaurant }: { rows:
     <div className="space-y-2">
       {rows.map((r) => {
         const s = STATUS[r.status];
+        const tag = splitCustomerType(r.notes);
         const [y, m, d] = r.requested_date.split("-").map(Number);
         return (
           <Card key={r.id} className="p-3 sm:p-4">
@@ -72,8 +74,9 @@ export function RequestList({ rows, canHandle, userId, showRestaurant }: { rows:
                   <Badge tone={s.tone}>{t(s.label)}</Badge>
                   <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ${r.channel === "line" ? "bg-emerald-100 text-emerald-800" : "bg-brand-100 text-brand-800"}`}>
                     {r.channel === "line" ? <MessageCircle className="size-3" /> : <Phone className="size-3" />}
-                    {r.channel === "line" ? "LINE" : t("Call")}
+                    {r.channel === "line" ? "LINE" : "Phone"}
                   </span>
+                  {tag.type ? <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${tag.type === "kol" ? "bg-purple-100 text-purple-800" : tag.type === "media" ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-700"}`}>{CUSTOMER_TYPE_LABELS[tag.type]}</span> : null}
                   {showRestaurant ? <span className="text-xs text-muted">{r.restaurant}</span> : null}
                 </div>
                 <p className="font-medium text-slate-900">
@@ -85,7 +88,7 @@ export function RequestList({ rows, canHandle, userId, showRestaurant }: { rows:
                 <p className="text-xs text-muted">
                   {[r.phone, r.line_id ? `LINE: ${r.line_id}` : null].filter(Boolean).join(" · ")}
                 </p>
-                {r.notes ? <p className="whitespace-pre-line text-sm text-slate-700">{r.notes}</p> : null}
+                {tag.notes ? <p className="whitespace-pre-line text-sm text-slate-700">{tag.notes}</p> : null}
                 {r.status === "declined" && r.decline_reason ? <p className="text-sm text-red-700">{t("Reason")}: {r.decline_reason}</p> : null}
                 <p className="text-xs text-muted">
                   {t("Logged by")} {r.created_by_name} · {timeFmt.format(new Date(r.created_at))}
@@ -101,7 +104,7 @@ export function RequestList({ rows, canHandle, userId, showRestaurant }: { rows:
                 {r.status === "pending" && canHandle ? (
                   <>
                     <Button asChild size="sm">
-                      <Link href={`/reservations/new?request=${r.id}`}>{t("Key into system")}</Link>
+                      <Link href={`/reservations/new?request=${r.id}`}>{t("Book table")}</Link>
                     </Button>
                     <Button
                       size="sm"
@@ -126,11 +129,6 @@ export function RequestList({ rows, canHandle, userId, showRestaurant }: { rows:
                     }}
                   >
                     {t("Cancel request")}
-                  </Button>
-                ) : null}
-                {r.status === "pending" ? (
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/availability?restaurant=${r.restaurant_id}&date=${r.requested_date}&party=${r.party_size}`}>{t("Check tables")}</Link>
                   </Button>
                 ) : null}
               </div>

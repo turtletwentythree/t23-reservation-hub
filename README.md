@@ -45,8 +45,8 @@ User management offers four roles: **Admin** (everything), **Store** (front of h
 
 ### Phone and LINE bookings (interim flow)
 
-1. The Call Center takes the call or LINE message, checks **Table availability** (green = free for that party size, red = full) and logs it in **Booking requests** with the channel (Call or LINE).
-2. Store staff see the waiting count in the menu, open the request and choose **Key into system**. The reservation form opens prefilled, with the source set to Phone or LINE. Saving links the reservation and marks the request as keyed in.
+1. The Call Center takes the call or LINE message, checks **Table availability** (a month sheet per restaurant: Internal / KOL / Media / other guests per day against seats, with OK / FULL / OVER CAP, and free times for the chosen day) and logs it in **Booking requests** with the channel (Phone or LINE) and guest type (Internal, KOL or Media).
+2. Store staff see the waiting count in the menu, open the request and choose **Book table**. A short reservation form opens prefilled, with the source set to Phone or LINE and the guest type tagged in the internal notes (e.g. `[KOL]`). Saving links the reservation and marks the request as keyed in.
 3. If the slot cannot be booked, the store declines it with a reason. The Call Center sees the status and reason and calls the guest back.
 
 Permissions are enforced three times: Zod input validation, a server-side permission check in every Server Action and route (`src/lib/auth/permissions.ts`), and Postgres row-level security as the final guard.

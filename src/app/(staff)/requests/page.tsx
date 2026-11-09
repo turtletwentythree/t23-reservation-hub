@@ -4,9 +4,7 @@ import { getStaffT } from "@/lib/i18n/staff-server";
 import { roleCan } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { pickParam, todayIn } from "@/lib/data/common";
-import { Card, CardContent, EmptyState, PageHeader, StatCard } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { LiveRefresh } from "@/components/live-refresh";
 import { RequestForm } from "./request-form";
 import { RequestList, type RequestRow } from "./request-list";
@@ -111,39 +109,23 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
       <PageHeader
         title={t("Booking requests")}
         description={canHandle
-          ? t("Requests from the Call Center (phone and LINE). Key each one into the system, or decline it if the slot is full.")
-          : t("Log phone and LINE booking requests here. The store keys them into the system and you can follow the status.")}
+          ? t("Requests from the Call Center (phone and LINE). Press Book table to key each one into the system.")
+          : t("Log phone and LINE booking requests here. The store books the table and you can follow the status.")}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label={t("Waiting to be keyed in")} value={pending.length} tone={pending.length ? "accent" : "slate"} />
-        <StatCard label={t("For today")} value={pending.filter((p) => p.requested_date === today).length} tone="brand" />
-        <StatCard label={t("Shown below")} value={list.length} tone="slate" />
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]">
-        <Card className="h-fit">
+      <div className={canHandle ? "space-y-3" : "grid gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]"}>
+        {canHandle ? null : <Card className="h-fit">
           <CardContent className="pt-4">
             <h2 className="mb-3 font-semibold text-slate-900">{t("New booking request")}</h2>
             <RequestForm restaurants={ctx.restaurants.filter((r) => ids.includes(r.id)).map((r) => ({ id: r.id, name: r.name }))} initial={prefill} />
           </CardContent>
-        </Card>
+        </Card>}
 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {tab("pending", "Awaiting entry")}
+            {tab("pending", `${t("Awaiting entry")} (${pending.length})`)}
             {tab("booked", "Keyed in")}
-            {tab("declined", "Declined")}
-            {tab("cancelled", "Cancelled")}
             {tab("all", "All")}
-            <form className="ml-auto flex items-center gap-2">
-              <input type="hidden" name="status" value={status} />
-              <Input type="date" name="date" defaultValue={date} className="h-8 w-40" aria-label={t("Date")} />
-              <Select name="mine" defaultValue={mine ? "1" : ""} className="h-8 w-36" aria-label={t("Logged by")}>
-                <option value="">{t("Everyone")}</option>
-                <option value="1">{t("Logged by me")}</option>
-              </Select>
-              <Button size="sm" variant="outline">{t("Show")}</Button>
-            </form>
           </div>
           <RequestList rows={list} canHandle={canHandle} userId={ctx.userId} showRestaurant={ids.length > 1} />
         </div>

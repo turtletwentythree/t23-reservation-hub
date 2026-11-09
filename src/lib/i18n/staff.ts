@@ -729,6 +729,20 @@ const T: Record<string, Entry> = {
   "out of service": { th: "งดใช้", fr: "hors service" },
   "seating time": { th: "เวลานั่ง", fr: "durée" },
   "times have a table": { th: "ช่วงเวลามีโต๊ะว่าง", fr: "créneaux avec une table" },
+  "+N = guests in requests still waiting for the store to key them in.": { th: "+N = จำนวนคนในเรื่องจองที่หน้าร้านยังไม่ได้คีย์", fr: "+N = couverts des demandes pas encore saisies." },
+  "Book table": { th: "จองโต๊ะ", fr: "Réserver la table" },
+  "Log phone and LINE booking requests here. The store books the table and you can follow the status.": { th: "บันทึกเรื่องจองจาก Phone / LINE ที่นี่ หน้าร้านจะเป็นคนจองโต๊ะในระบบ และดูสถานะได้จากหน้านี้", fr: "Enregistrez ici les demandes par téléphone / LINE. L'établissement réserve la table et vous suivez le statut." },
+  "Requests from the Call Center (phone and LINE). Press Book table to key each one into the system.": { th: "เรื่องจองจากคอลเซ็นเตอร์ (Phone / LINE) กด \"จองโต๊ะ\" เพื่อคีย์เข้าระบบ", fr: "Demandes du centre d'appels (téléphone / LINE). Appuyez sur Réserver la table pour les saisir." },
+  "Next month": { th: "เดือนถัดไป", fr: "Mois suivant" },
+  "Previous month": { th: "เดือนก่อนหน้า", fr: "Mois précédent" },
+  "Notes (optional)": { th: "หมายเหตุ (ถ้ามี)", fr: "Note (facultatif)" },
+  "Other": { th: "อื่นๆ", fr: "Autres" },
+  "Seats left": { th: "ที่นั่งเหลือ", fr: "Places restantes" },
+  "Seats per day": { th: "ที่นั่งต่อวัน", fr: "Places par jour" },
+  "Tap a day to see free times.": { th: "แตะวันที่เพื่อดูเวลาที่ว่าง", fr: "Touchez un jour pour voir les heures libres." },
+  "Total": { th: "รวม", fr: "Total" },
+  "days": { th: "วัน", fr: "jours" },
+  "green = table free, red = full": { th: "เขียว = มีโต๊ะว่าง แดง = เต็ม", fr: "vert = table libre, rouge = complet" },
 };
 
 export type Translate = (text: string) => string;
