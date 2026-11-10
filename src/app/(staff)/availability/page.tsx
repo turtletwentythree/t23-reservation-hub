@@ -68,7 +68,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const monthParam = pickParam(sp.month);
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : date.slice(0, 7);
   const timeParam = pickParam(sp.time);
-  const tlView = pickParam(sp.tl) === "month" ? "month" : "day";
+  const tlView = pickParam(sp.tl) === "day" ? "day" : "month";
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
 
   const supabase = await createClient();
