@@ -137,90 +137,7 @@ export function AvailabilityView(p: AvailabilityViewProps) {
         }
       />
 
-      {/* 1. Month at a glance */}
-      <Card>
-        <CardContent className="space-y-3 pt-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <CalendarDays className="size-5 text-brand-700" />
-            <Button asChild size="sm" variant="outline"><Link href={q({ month: p.prevMonth, date: `${p.prevMonth}-01` })} aria-label={t("Previous month")}><ChevronLeft /></Link></Button>
-            <span className="min-w-40 text-center text-lg font-semibold text-slate-900">{fmt(`${p.month}-01`, { month: "long", year: "numeric" })}</span>
-            <Button asChild size="sm" variant="outline"><Link href={q({ month: p.nextMonth, date: `${p.nextMonth}-01` })} aria-label={t("Next month")}><ChevronRight /></Link></Button>
-            <Button asChild size="sm" variant="ghost"><Link href={q({ month: p.today.slice(0, 7), date: p.today })}>{t("Today")}</Link></Button>
-            <div className="ml-auto flex flex-wrap gap-1.5 text-xs">
-              <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">{t("Guests this month")} <strong className="tabular-nums">{monthTotals.guests}</strong></span>
-              <span className="rounded-md bg-amber-100 px-2 py-1 font-medium text-amber-800">{t("Full days")} <strong className="tabular-nums">{monthTotals.full}</strong></span>
-              <span className="rounded-md bg-red-100 px-2 py-1 font-medium text-red-700">{t("Over capacity")} <strong className="tabular-nums">{monthTotals.over}</strong></span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div className="min-w-[60rem] space-y-1">
-              <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-slate-500">
-                {weekdays.map((w) => <span key={w}>{w}</span>)}
-              </div>
-              <div className="grid grid-cols-7 gap-1.5">
-                {cells.map((d, i) => {
-                  if (!d) return <span key={`e${i}`} />;
-                  const s = STATUS[d.status];
-                  const list = p.bookingsByDay[d.date] ?? [];
-                  const pct = d.seats > 0 ? Math.min(100, (d.total / d.seats) * 100) : 0;
-                  return (
-                    <Link
-                      key={d.date}
-                      href={`${q({ date: d.date })}#day`}
-                      className={cn(
-                        "flex min-h-44 flex-col gap-1 rounded-xl border p-2 text-left transition hover:shadow-md",
-                        s.cell,
-                        d.date < p.today && "opacity-55",
-                        d.date === p.date && "ring-2 ring-brand-600 ring-offset-1",
-                      )}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <span className={cn("flex size-7 items-center justify-center rounded-full text-sm font-bold tabular-nums", d.date === p.today ? "bg-brand-600 text-white" : "text-slate-900")}>{Number(d.date.slice(8))}</span>
-                        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", s.badge)}>{t(s.label)}</span>
-                        {d.waiting ? <span className="ml-auto rounded-full bg-accent-100 px-1.5 py-0.5 text-[10px] font-semibold text-accent-800" title={t("Guests in requests waiting to be keyed in")}>+{d.waiting}</span> : null}
-                      </span>
-                      {d.status === "closed" ? (
-                        <span className="m-auto text-xs font-medium text-slate-500">{t("Closed")}</span>
-                      ) : (
-                        <>
-                          <span className="flex items-baseline justify-between gap-1 tabular-nums">
-                            <span className="text-xs text-slate-600"><strong className="text-base text-slate-900">{d.total}</strong>/{d.seats} {t("guests")}</span>
-                            {list.length ? <span className="text-[11px] text-slate-500">{list.length} {t("bookings")}</span> : <span className="text-[11px] text-emerald-700">{t("No bookings")}</span>}
-                          </span>
-                          <span className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
-                            <span className={cn("block h-full rounded-full", s.bar)} style={{ width: `${pct}%` }} />
-                          </span>
-                          <span className="flex flex-wrap gap-1">
-                            {(p.roomDays[d.date] ?? []).map((z) => (
-                              <span key={z.id} className={cn("rounded px-1.5 text-[10px] font-medium leading-4 tabular-nums", z.total > 0 && z.booked >= z.total ? "bg-red-100 text-red-700" : z.booked > 0 ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800")}>
-                                {z.name} {z.total - z.booked}/{z.total}
-                              </span>
-                            ))}
-                          </span>
-                          <span className="flex flex-col gap-0.5">
-                            {list.slice(0, 4).map((b) => (
-                              <span key={b.id} className={cn("flex items-center gap-1 truncate rounded border-l-[3px] px-1 text-[10px] leading-4", TYPE_LINE[b.type ?? "other"])}>
-                                <span className="font-semibold tabular-nums">{b.time}</span>
-                                <span className="shrink-0">{b.tables || "—"}</span>
-                                <span className="ml-auto shrink-0 tabular-nums font-semibold">{b.party}</span>
-                              </span>
-                            ))}
-                            {list.length > 4 ? <span className="text-[10px] font-semibold text-brand-700">+{list.length - 4} {t("more")}</span> : null}
-                          </span>
-                        </>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <Legend t={t} typeLabel={p.typeLabel} />
-        </CardContent>
-      </Card>
-
-      {/* 2. The chosen day */}
+      {/* 1. The chosen day (today by default) */}
       <Card id="day" className="scroll-mt-4 border-brand-200">
         <CardContent className="space-y-5 pt-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -344,6 +261,90 @@ export function AvailabilityView(p: AvailabilityViewProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* 2. Month at a glance: pick another day */}
+      <Card>
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarDays className="size-5 text-brand-700" />
+            <Button asChild size="sm" variant="outline"><Link href={q({ month: p.prevMonth, date: `${p.prevMonth}-01` })} aria-label={t("Previous month")}><ChevronLeft /></Link></Button>
+            <span className="min-w-40 text-center text-lg font-semibold text-slate-900">{fmt(`${p.month}-01`, { month: "long", year: "numeric" })}</span>
+            <Button asChild size="sm" variant="outline"><Link href={q({ month: p.nextMonth, date: `${p.nextMonth}-01` })} aria-label={t("Next month")}><ChevronRight /></Link></Button>
+            <Button asChild size="sm" variant="ghost"><Link href={q({ month: p.today.slice(0, 7), date: p.today })}>{t("Today")}</Link></Button>
+            <div className="ml-auto flex flex-wrap gap-1.5 text-xs">
+              <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">{t("Guests this month")} <strong className="tabular-nums">{monthTotals.guests}</strong></span>
+              <span className="rounded-md bg-amber-100 px-2 py-1 font-medium text-amber-800">{t("Full days")} <strong className="tabular-nums">{monthTotals.full}</strong></span>
+              <span className="rounded-md bg-red-100 px-2 py-1 font-medium text-red-700">{t("Over capacity")} <strong className="tabular-nums">{monthTotals.over}</strong></span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="min-w-[60rem] space-y-1">
+              <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-slate-500">
+                {weekdays.map((w) => <span key={w}>{w}</span>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {cells.map((d, i) => {
+                  if (!d) return <span key={`e${i}`} />;
+                  const s = STATUS[d.status];
+                  const list = p.bookingsByDay[d.date] ?? [];
+                  const pct = d.seats > 0 ? Math.min(100, (d.total / d.seats) * 100) : 0;
+                  return (
+                    <Link
+                      key={d.date}
+                      href={`${q({ date: d.date })}#day`}
+                      className={cn(
+                        "flex min-h-44 flex-col gap-1 rounded-xl border p-2 text-left transition hover:shadow-md",
+                        s.cell,
+                        d.date < p.today && "opacity-55",
+                        d.date === p.date && "ring-2 ring-brand-600 ring-offset-1",
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className={cn("flex size-7 items-center justify-center rounded-full text-sm font-bold tabular-nums", d.date === p.today ? "bg-brand-600 text-white" : "text-slate-900")}>{Number(d.date.slice(8))}</span>
+                        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", s.badge)}>{t(s.label)}</span>
+                        {d.waiting ? <span className="ml-auto rounded-full bg-accent-100 px-1.5 py-0.5 text-[10px] font-semibold text-accent-800" title={t("Guests in requests waiting to be keyed in")}>+{d.waiting}</span> : null}
+                      </span>
+                      {d.status === "closed" ? (
+                        <span className="m-auto text-xs font-medium text-slate-500">{t("Closed")}</span>
+                      ) : (
+                        <>
+                          <span className="flex items-baseline justify-between gap-1 tabular-nums">
+                            <span className="text-xs text-slate-600"><strong className="text-base text-slate-900">{d.total}</strong>/{d.seats} {t("guests")}</span>
+                            {list.length ? <span className="text-[11px] text-slate-500">{list.length} {t("bookings")}</span> : <span className="text-[11px] text-emerald-700">{t("No bookings")}</span>}
+                          </span>
+                          <span className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
+                            <span className={cn("block h-full rounded-full", s.bar)} style={{ width: `${pct}%` }} />
+                          </span>
+                          <span className="flex flex-wrap gap-1">
+                            {(p.roomDays[d.date] ?? []).map((z) => (
+                              <span key={z.id} className={cn("rounded px-1.5 text-[10px] font-medium leading-4 tabular-nums", z.total > 0 && z.booked >= z.total ? "bg-red-100 text-red-700" : z.booked > 0 ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800")}>
+                                {z.name} {z.total - z.booked}/{z.total}
+                              </span>
+                            ))}
+                          </span>
+                          <span className="flex flex-col gap-0.5">
+                            {list.slice(0, 4).map((b) => (
+                              <span key={b.id} className={cn("flex items-center gap-1 truncate rounded border-l-[3px] px-1 text-[10px] leading-4", TYPE_LINE[b.type ?? "other"])}>
+                                <span className="font-semibold tabular-nums">{b.time}</span>
+                                <span className="shrink-0">{b.tables || "—"}</span>
+                                <span className="ml-auto shrink-0 tabular-nums font-semibold">{b.party}</span>
+                              </span>
+                            ))}
+                            {list.length > 4 ? <span className="text-[10px] font-semibold text-brand-700">+{list.length - 4} {t("more")}</span> : null}
+                          </span>
+                        </>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <Legend t={t} typeLabel={p.typeLabel} />
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
