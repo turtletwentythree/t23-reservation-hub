@@ -17,7 +17,7 @@ import { floorPlanFor } from "@/lib/floor-plans";
 import { TableTimeline } from "@/components/table-timeline";
 import { buildTimeline } from "@/lib/domain/table-timeline";
 import { buildTableMonth } from "@/lib/domain/table-month";
-import { TableMonthGrid } from "@/components/table-month-grid";
+import { TableMonthCalendar } from "@/components/table-month-calendar";
 import { splitCustomerType } from "@/lib/domain/request-tags";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
@@ -114,8 +114,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         })
       : null;
   // Month view of the same card: bookings per table per day.
-  let tableMonth: ReturnType<typeof buildTableMonth> | null = null;
-  if (tlView === "month") {
+  let tableMonth: ReturnType<typeof buildTableMonth>;
+  {
     const { data: monthRes } = await supabase
       .from("reservations")
       .select("id, reservation_date, reservation_time, customer_name, party_size, status, internal_notes, reservation_tables(table_id)")
@@ -169,6 +169,22 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
       : `/requests?restaurant=${restaurantId}&rdate=${date}&time=${time}&party=${party}`;
   const fmt = (d: string, o: Intl.DateTimeFormatOptions) => new Date(`${d}T12:00:00Z`).toLocaleDateString(dl, { timeZone: "UTC", ...o });
 
+  const typeLabel = (k: string) => (k === "other" ? t("Other") : CUSTOMER_TYPE_LABELS[k as keyof typeof CUSTOMER_TYPE_LABELS] ?? k);
+  // Per room and day: tables booked out of tables in the room.
+  const roomDay = (d: string) =>
+    tableMonth.rooms.map((room) => {
+      const live = room.tables.filter((x) => !x.out);
+      const zone = zm.zones.find((z) => z.id === room.id);
+      return {
+        id: room.id ?? "none",
+        name: room.name,
+        booked: live.filter((x) => (x.days[d] ?? []).length > 0).length,
+        total: live.length,
+        pax: zone ? zm.paxOf(zone.id, d) : null,
+        cap: zone ? zm.capacityOf(zone.id, d) : null,
+      };
+    });
+  const bookingsOn = (d: string) => new Set(tableMonth.rooms.flatMap((r) => r.tables.flatMap((x) => (x.days[d] ?? []).map((b) => b.id)))).size;
   // Calendar grid, weeks start on Monday.
   const firstDow = (new Date(`${month}-01T12:00:00Z`).getUTCDay() + 6) % 7;
   const cells: (typeof rows[number] | null)[] = [...Array(firstDow).fill(null), ...rows];
@@ -217,7 +233,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                     key={r.date}
                     href={q({ date: r.date })}
                     className={cn(
-                      "flex min-h-[4.5rem] flex-col rounded-lg border p-1.5 text-left transition sm:min-h-[5.5rem]",
+                      "flex min-h-[4.5rem] flex-col rounded-lg border p-1.5 text-left transition sm:min-h-[8.5rem]",
                       DAY_CLS[r.status],
                       r.date < today && "opacity-50",
                       r.date === date && "ring-2 ring-brand-500",
@@ -231,8 +247,18 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                       <span className="mt-auto text-[11px]">{t("Closed")}</span>
                     ) : (
                       <>
-                        <span className="mt-auto text-xs tabular-nums text-slate-800">
-                          <strong>{r.total}</strong>/{r.seats}
+                        <span className={cn("mt-0.5 w-fit rounded px-1 text-[10px] font-semibold", BADGE[r.status].cls)}>{t(BADGE[r.status].label)}</span>
+                        <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
+                          {roomDay(r.date).map((z) => (
+                            <span key={z.id} className="flex items-center gap-1 text-[10px] leading-3 text-slate-700">
+                              <span className="truncate">{z.name}</span>
+                              <span className={cn("ml-auto shrink-0 tabular-nums font-medium", z.booked >= z.total && z.total > 0 ? "text-red-700" : "text-slate-800")}>{z.booked}/{z.total}</span>
+                            </span>
+                          ))}
+                        </span>
+                        <span className="mt-auto pt-1 text-xs tabular-nums text-slate-800">
+                          <strong>{r.total}</strong>/{r.seats} {t("guests")}
+                          {bookingsOn(r.date) ? <span className="text-muted"> · {bookingsOn(r.date)} {t("bookings")}</span> : null}
                         </span>
                         <span className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-white">
                           {(["internal", "kol", "media", "other"] as const).map((k) =>
@@ -251,6 +277,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               {(["internal", "kol", "media", "other"] as const).map((k) => (
                 <span key={k} className="flex items-center gap-1"><span className={cn("size-2 rounded-full", TYPE_COLORS[k])} />{k === "other" ? t("Other") : CUSTOMER_TYPE_LABELS[k]}</span>
               ))}
+              <span>· {t("Room rows = tables booked / tables in the room")}</span>
               <span>· {t("+N = guests in requests still waiting for the store to key them in.")}</span>
             </div>
           </CardContent>
@@ -372,14 +399,15 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               )}
             </div>
           </div>
-          {tlView === "month" && tableMonth ? (
-            <TableMonthGrid
+          {tlView === "month" ? (
+            <TableMonthCalendar
               data={tableMonth}
               today={today}
               selected={date}
               closed={closedDays}
               dayHref={(d) => `${q({ tl: "day", date: d, month: d.slice(0, 7) })}#by-table`}
-              weekday={(d) => fmt(d, { weekday: "narrow" })}
+              weekdays={weekdays}
+              typeLabel={typeLabel}
               t={t}
             />
           ) : timeline ? (
@@ -387,7 +415,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               timeline={timeline}
               nowLeft={nowLeft}
               t={t}
-              typeLabel={(k) => (k === "other" ? t("Other") : CUSTOMER_TYPE_LABELS[k as keyof typeof CUSTOMER_TYPE_LABELS] ?? k)}
+              typeLabel={typeLabel}
               linkTo={ctx.pages.includes("reservations") && roleCan(ctx.role, "reservation.view") ? (id) => `/reservations/${id}` : null}
             />
           ) : (

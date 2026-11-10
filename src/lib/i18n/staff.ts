@@ -703,6 +703,8 @@ const T: Record<string, Entry> = {
   "Click a day to see times": { th: "กดที่วันเพื่อดูเวลาที่จอง", fr: "Cliquez sur un jour pour voir les heures" },
   "Now": { th: "ตอนนี้", fr: "Maintenant" },
   "Bookings per table per day. Pick a month to look further ahead.": { th: "จำนวนการจองของแต่ละโต๊ะในแต่ละวัน เลือกเดือนเพื่อดูล่วงหน้าได้", fr: "Réservations par table et par jour. Choisissez un mois pour voir plus loin." },
+  "more": { th: "เพิ่มเติม", fr: "de plus" },
+  "Room rows = tables booked / tables in the room": { th: "แถวห้อง = โต๊ะที่จอง / โต๊ะทั้งหมดในห้อง", fr: "Lignes de salle = tables réservées / tables de la salle" },
   "Bookings by table": { th: "การจองแยกตามโต๊ะ", fr: "Réservations par table" },
   "Green = free, coloured block = booked time": { th: "สีเขียว = ว่าง · แถบสี = ช่วงเวลาที่ถูกจอง", fr: "Vert = libre, bloc coloré = heure réservée" },
   "Custom": { th: "กำหนดช่วง", fr: "Personnalisé" },
