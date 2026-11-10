@@ -68,7 +68,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const monthParam = pickParam(sp.month);
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : date.slice(0, 7);
   const timeParam = pickParam(sp.time);
-  const tlView = pickParam(sp.tl) === "day" ? "day" : "month";
+  const tlView = pickParam(sp.tl) === "month" ? "month" : "day";
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
 
   const supabase = await createClient();
@@ -189,6 +189,16 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         cap: zone ? zm.capacityOf(zone.id, d) : null,
       };
     });
+  const LINE_CLS: Record<string, string> = {
+    internal: "border-slate-400 bg-slate-100 text-slate-900",
+    kol: "border-purple-400 bg-purple-50 text-purple-900",
+    media: "border-sky-400 bg-sky-50 text-sky-900",
+    other: "border-amber-400 bg-amber-50 text-amber-900",
+  };
+  const linesOn = (d: string) =>
+    tableMonth.rooms
+      .flatMap((room) => room.tables.flatMap((tb) => (tb.days[d] ?? []).map((b) => ({ ...b, table: tb.label }))))
+      .sort((a, b) => a.time.localeCompare(b.time) || a.table.localeCompare(b.table, undefined, { numeric: true }));
   const bookingsOn = (d: string) => new Set(tableMonth.rooms.flatMap((r) => r.tables.flatMap((x) => (x.days[d] ?? []).map((b) => b.id)))).size;
   // Calendar grid, weeks start on Monday.
   const firstDow = (new Date(`${month}-01T12:00:00Z`).getUTCDay() + 6) % 7;
@@ -214,8 +224,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
+      <Card>
           <CardContent className="space-y-3 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm" variant="outline"><Link href={q({ month: shiftMonth(month, -1), date: `${shiftMonth(month, -1)}-01` })} aria-label={t("Previous month")}><ChevronLeft /></Link></Button>
@@ -235,6 +244,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               </div>
             </div>
 
+            <div className="overflow-x-auto">
+            <div className="min-w-[56rem] space-y-1">
             <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase text-muted">
               {weekdays.map((w) => <span key={w}>{w}</span>)}
             </div>
@@ -243,39 +254,49 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                 r ? (
                   <Link
                     key={r.date}
-                    href={q({ date: r.date })}
+                    href={`${q({ date: r.date })}#day`}
                     className={cn(
-                      "flex min-h-[4.5rem] flex-col rounded-lg border p-1.5 text-left transition sm:min-h-[8.5rem]",
+                      "flex min-h-40 flex-col rounded-lg border p-1.5 text-left transition hover:shadow-sm",
                       DAY_CLS[r.status],
                       r.date < today && "opacity-50",
                       r.date === date && "ring-2 ring-brand-500",
                     )}
                   >
-                    <span className="flex items-center justify-between">
-                      <span className={cn("text-sm font-semibold tabular-nums", r.date === today && "rounded bg-brand-500 px-1 text-white")}>{Number(r.date.slice(8))}</span>
-                      {r.waiting ? <span className="text-[10px] font-medium text-accent-700">+{r.waiting}</span> : null}
+                    <span className="flex items-center gap-1">
+                      <span className={cn("flex size-6 items-center justify-center rounded-full text-sm font-semibold tabular-nums", r.date === today ? "bg-brand-600 text-white" : "text-slate-900")}>{Number(r.date.slice(8))}</span>
+                      <span className={cn("rounded px-1.5 text-[10px] font-semibold", BADGE[r.status].cls)}>{t(BADGE[r.status].label)}</span>
+                      {r.waiting ? <span className="ml-auto rounded bg-accent-50 px-1 text-[10px] font-medium text-accent-700" title={t("+N = guests in requests still waiting for the store to key them in.")}>+{r.waiting}</span> : null}
                     </span>
                     {r.status === "closed" ? (
-                      <span className="mt-auto text-[11px]">{t("Closed")}</span>
+                      <span className="mt-auto text-xs text-slate-500">{t("Closed")}</span>
                     ) : (
                       <>
-                        <span className={cn("mt-0.5 w-fit rounded px-1 text-[10px] font-semibold", BADGE[r.status].cls)}>{t(BADGE[r.status].label)}</span>
-                        <span className="mt-1 hidden flex-col gap-0.5 sm:flex">
-                          {roomDay(r.date).map((z) => (
-                            <span key={z.id} className="flex items-center gap-1 text-[10px] leading-3 text-slate-700">
-                              <span className="truncate">{z.name}</span>
-                              <span className={cn("ml-auto shrink-0 tabular-nums font-medium", z.booked >= z.total && z.total > 0 ? "text-red-700" : "text-slate-800")}>{z.booked}/{z.total}</span>
-                            </span>
-                          ))}
+                        <span className="mt-1 flex items-baseline gap-1 text-xs tabular-nums text-slate-800">
+                          <strong className="text-sm">{r.total}</strong>/{r.seats} {t("guests")}
+                          {bookingsOn(r.date) ? <span className="ml-auto text-[11px] text-muted">{bookingsOn(r.date)} {t("bookings")}</span> : null}
                         </span>
-                        <span className="mt-auto pt-1 text-xs tabular-nums text-slate-800">
-                          <strong>{r.total}</strong>/{r.seats} {t("guests")}
-                          {bookingsOn(r.date) ? <span className="text-muted"> · {bookingsOn(r.date)} {t("bookings")}</span> : null}
-                        </span>
-                        <span className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-white">
+                        <span className="mt-0.5 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                           {(["internal", "kol", "media", "other"] as const).map((k) =>
                             r.pax[k] ? <span key={k} className={TYPE_COLORS[k]} style={{ width: `${(r.pax[k] / Math.max(r.seats, r.total, 1)) * 100}%` }} /> : null,
                           )}
+                        </span>
+                        <span className="mt-1 flex flex-wrap gap-0.5">
+                          {roomDay(r.date).map((z) => (
+                            <span key={z.id} className={cn("rounded px-1 text-[10px] leading-4 tabular-nums", z.total > 0 && z.booked >= z.total ? "bg-red-100 text-red-700" : z.booked > 0 ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700")} title={`${z.name}: ${z.booked}/${z.total} ${t("Tables").toLowerCase()}${z.pax != null ? ` · ${z.pax}/${z.cap ?? "–"} ${t("guests")}` : ""}`}>
+                              {z.name} {z.booked}/{z.total}
+                            </span>
+                          ))}
+                        </span>
+                        <span className="mt-1 flex flex-col gap-0.5">
+                          {linesOn(r.date).slice(0, 5).map((l) => (
+                            <span key={l.id + l.table} className={cn("flex items-center gap-1 truncate rounded border-l-[3px] px-1 text-[10px] leading-4", LINE_CLS[l.type ?? "other"] ?? LINE_CLS.other)} title={`${l.time} · ${l.table} · ${l.name} · ${l.party}`}>
+                              <span className="font-semibold tabular-nums">{l.time}</span>
+                              <span className="shrink-0">{l.table}</span>
+                              <span className="truncate text-slate-600">{l.name.replace(/^MOCK /, "")}</span>
+                              <span className="ml-auto shrink-0 tabular-nums font-medium">{l.party}</span>
+                            </span>
+                          ))}
+                          {linesOn(r.date).length > 5 ? <span className="text-[10px] font-medium text-brand-700">+{linesOn(r.date).length - 5} {t("more")}</span> : null}
                         </span>
                       </>
                     )}
@@ -284,6 +305,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
                   <span key={`e${i}`} />
                 ),
               )}
+            </div>
+            </div>
             </div>
             <div className="flex flex-wrap gap-3 pt-1 text-xs text-muted">
               {(["internal", "kol", "media", "other"] as const).map((k) => (
@@ -295,7 +318,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           </CardContent>
         </Card>
 
-        <Card className="h-fit xl:sticky xl:top-4">
+      <div id="day" className="grid scroll-mt-4 items-start gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
+        <Card className="h-fit">
           <CardContent className="space-y-4 pt-4">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -351,7 +375,6 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
             </div>
           </CardContent>
         </Card>
-      </div>
 
       <Card>
         <CardContent className="space-y-3 pt-4">
@@ -374,6 +397,8 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           ) : board.ok ? <RoomStatus rooms={rooms} t={t} guests={zoneGuests} /> : <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>}
         </CardContent>
       </Card>
+
+      </div>
 
       <Card id="by-table">
         <CardContent className="space-y-3 pt-4">
