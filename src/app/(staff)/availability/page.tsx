@@ -72,9 +72,28 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
 
   const supabase = await createClient();
-  const cap = await loadCapacityMonth(supabase, restaurantId, month);
-  const [occupancy, areas] = await Promise.all([loadOccupancy(supabase, restaurantId, date, restaurant.timezone), loadAreas(supabase, restaurantId)]);
-  const zm = await loadZoneMonth(supabase, restaurantId, month, cap.config);
+  // Everything that does not depend on another query is fetched at once, to keep clicks fast.
+  const [cap, occupancy, areas, { data: monthRes }] = await Promise.all([
+    loadCapacityMonth(supabase, restaurantId, month),
+    loadOccupancy(supabase, restaurantId, date, restaurant.timezone),
+    loadAreas(supabase, restaurantId),
+    supabase
+      .from("reservations")
+      .select("id, reservation_date, reservation_time, customer_name, party_size, status, internal_notes, reservation_tables(table_id)")
+      .eq("restaurant_id", restaurantId)
+      .gte("reservation_date", `${month}-01`)
+      .lte("reservation_date", `${month}-31`)
+      .not("status", "in", "(cancelled,no_show)"),
+  ]);
+  // Booking details for the day's timeline come from the month list; only the rest (e.g. a late booking from the day before) is fetched.
+  const known = new Set((monthRes ?? []).map((r) => r.id));
+  const missing = [...new Set(occupancy.map((o) => o.reservation_id))].filter((id) => !known.has(id));
+  const [zm, { data: extraDetail }] = await Promise.all([
+    loadZoneMonth(supabase, restaurantId, month, cap.config),
+    missing.length
+      ? supabase.from("reservations").select("id, customer_name, party_size, status, internal_notes").in("id", missing)
+      : Promise.resolve({ data: [] as { id: string; customer_name: string; party_size: number; status: string; internal_notes: string | null }[] }),
+  ]);
   const zoneGuests = new Map(zm.zones.map((z) => [z.id, { pax: zm.paxOf(z.id, date), cap: zm.capacityOf(z.id, date) }]));
   const rows = cap.rows;
   const board = buildAvailabilityBoard({
@@ -94,11 +113,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const slot = board.ok ? board.slots[slotIdx] : undefined;
   const rooms = board.ok ? summarizeRooms(board, new Map(cap.config.tables.map((x) => [x.id, x.area_id])), areas, slotIdx) : [];
   // Who is booked on which table, and when.
-  const resIds = [...new Set(occupancy.map((o) => o.reservation_id))];
-  const { data: resDetail } = resIds.length
-    ? await supabase.from("reservations").select("id, customer_name, party_size, status, internal_notes").in("id", resIds)
-    : { data: [] };
-  const details = new Map((resDetail ?? []).map((r) => [r.id, { name: r.customer_name, party: r.party_size, type: splitCustomerType(r.internal_notes).type, status: r.status }]));
+  const details = new Map([...(monthRes ?? []), ...(extraDetail ?? [])].map((r) => [r.id, { name: r.customer_name, party: r.party_size, type: splitCustomerType(r.internal_notes).type, status: r.status }]));
   const timeline =
     board.ok && board.slots.length
       ? buildTimeline({
@@ -114,34 +129,24 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         })
       : null;
   // Month view of the same card: bookings per table per day.
-  let tableMonth: ReturnType<typeof buildTableMonth>;
-  {
-    const { data: monthRes } = await supabase
-      .from("reservations")
-      .select("id, reservation_date, reservation_time, customer_name, party_size, status, internal_notes, reservation_tables(table_id)")
-      .eq("restaurant_id", restaurantId)
-      .gte("reservation_date", `${month}-01`)
-      .lte("reservation_date", `${month}-31`)
-      .not("status", "in", "(cancelled,no_show)");
-    tableMonth = buildTableMonth({
-      month,
-      tables: cap.config.tables
-        .filter((x) => x.is_active)
-        .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
-        .map((x) => ({ id: x.id, label: x.label, capacity: x.max_capacity, areaId: x.area_id ?? null, out: false })),
-      areas,
-      bookings: (monthRes ?? []).map((r) => ({
-        id: r.id,
-        date: r.reservation_date,
-        time: r.reservation_time,
-        name: r.customer_name,
-        party: r.party_size,
-        type: splitCustomerType(r.internal_notes).type,
-        status: r.status,
-        tableIds: (r.reservation_tables ?? []).map((x: { table_id: string }) => x.table_id),
-      })),
-    });
-  }
+  const tableMonth = buildTableMonth({
+    month,
+    tables: cap.config.tables
+      .filter((x) => x.is_active)
+      .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+      .map((x) => ({ id: x.id, label: x.label, capacity: x.max_capacity, areaId: x.area_id ?? null, out: false })),
+    areas,
+    bookings: (monthRes ?? []).map((r) => ({
+      id: r.id,
+      date: r.reservation_date,
+      time: r.reservation_time,
+      name: r.customer_name,
+      party: r.party_size,
+      type: splitCustomerType(r.internal_notes).type,
+      status: r.status,
+      tableIds: (r.reservation_tables ?? []).map((x: { table_id: string }) => x.table_id),
+    })),
+  });
   const closedDays = new Set(rows.filter((r) => r.status === "closed").map((r) => r.date));
   let nowLeft: number | null = null;
   if (timeline && date === today) {
