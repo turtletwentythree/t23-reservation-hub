@@ -736,6 +736,8 @@ const T: Record<string, Entry> = {
   "for": { th: "สำหรับ", fr: "pour" },
   "guests not keyed in yet": { th: "คน ยังไม่ได้คีย์เป็นการจอง", fr: "clients pas encore saisis" },
   "number = tables free for this party size": { th: "ตัวเลข = โต๊ะที่ว่างสำหรับจำนวนลูกค้านี้", fr: "nombre = tables libres pour ce nombre de clients" },
+  "1. Pick a day  2. Pick a time  3. Book a free table": { th: "1. เลือกวัน  2. เลือกเวลา  3. จองโต๊ะที่ว่าง", fr: "1. Choisir un jour  2. Choisir une heure  3. Réserver une table libre" },
+  "No free table": { th: "ไม่มีโต๊ะว่าง", fr: "Aucune table libre" },
   "Bookings by table": { th: "การจองแยกตามโต๊ะ", fr: "Réservations par table" },
   "Green = free, coloured block = booked time": { th: "สีเขียว = ว่าง · แถบสี = ช่วงเวลาที่ถูกจอง", fr: "Vert = libre, bloc coloré = heure réservée" },
   "Custom": { th: "กำหนดช่วง", fr: "Personnalisé" },
