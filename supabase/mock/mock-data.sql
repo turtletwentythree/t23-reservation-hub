@@ -1,4 +1,4 @@
--- MOCK DATA for Roi Chak Sam, 9 Nov to 30 Nov 2026, for testing.
+-- MOCK DATA for Roi Chak Sam, the whole of November 2026 (1 to 30 Nov), for testing.
 -- Everything is tagged: reservation references start with MOCK-, guest names start with "MOCK ",
 -- so mock-cleanup.sql removes it all again. Safe to run more than once (it clears its own data first).
 -- Run in Supabase -> SQL Editor. Run roi-chak-sam-rooms.sql, daily-capacity.sql and zone-capacity.sql first.
@@ -39,8 +39,8 @@ begin
   -- Holiday: Tue 24 Nov is closed for everyone.
   insert into public.operating_hours (restaurant_id, specific_date, service_name, is_closed) values (r, '2026-11-24', 'MOCK holiday', true);
 
-  for d in select generate_series('2026-11-09'::date, '2026-11-30'::date, interval '1 day')::date loop
-    i := d - '2026-11-09'::date;
+  for d in select generate_series('2026-11-01'::date, '2026-11-30'::date, interval '1 day')::date loop
+    i := d - '2026-11-01'::date;
     -- No bookings on the holiday or on the day closed by capacity 0 (19 Nov).
     continue when d in ('2026-11-24', '2026-11-19');
 
@@ -53,7 +53,8 @@ begin
     t_b := t_open + interval '150 minutes';
     if svc.last_seating_time is not null and t_b > svc.last_seating_time then t_b := null; end if;
 
-    threshold := case when i in (6, 7) then 100 else profile[1 + (i % 7)] end;
+    -- 15 and 16 Nov: every table booked.
+    threshold := case when i in (14, 15) then 100 else profile[1 + (i % 7)] end;
 
     for slot in 1..2 loop
       t_slot := case slot when 1 then t_a else t_b end;
