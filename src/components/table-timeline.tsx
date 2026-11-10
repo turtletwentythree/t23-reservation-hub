@@ -10,8 +10,10 @@ const BLOCK: Record<string, string> = {
 };
 
 /** Table-by-time schedule: booked blocks (who, how many, when) and the free gaps between them, grouped by room. */
-export function TableTimeline({ timeline, typeLabel, t, linkTo }: {
+export function TableTimeline({ timeline, typeLabel, t, linkTo, nowLeft }: {
   timeline: Timeline;
+  /** Position of "now" on the axis in percent, when the day shown is today. */
+  nowLeft?: number | null;
   typeLabel: (k: string) => string;
   t: (s: string) => string;
   /** Build a link for a booking, or null when the viewer cannot open reservations. */
@@ -20,29 +22,31 @@ export function TableTimeline({ timeline, typeLabel, t, linkTo }: {
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto">
-        <div className="min-w-[44rem] space-y-3">
-          <div className="grid grid-cols-[8rem_1fr] gap-2">
+        <div className="min-w-[48rem] space-y-4">
+          <div className="sticky top-0 z-10 grid grid-cols-[9rem_1fr] gap-2 bg-white pb-1">
             <span />
-            <div className="relative h-5 text-[11px] tabular-nums text-muted">
+            <div className="relative h-5 text-xs font-medium tabular-nums text-slate-600">
               {timeline.ticks.map((k) => (
                 <span key={k.label} className="absolute -translate-x-1/2" style={{ left: `${k.left}%` }}>{k.label}</span>
               ))}
             </div>
           </div>
           {timeline.rooms.map((room) => (
-            <div key={room.id ?? "none"} className="space-y-1">
-              <p className="text-sm font-semibold text-slate-900">{room.name}</p>
+            <div key={room.id ?? "none"} className="space-y-1.5 rounded-lg border bg-slate-50/50 p-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">{room.name}</p>
               {room.tables.map((tb) => (
-                <div key={tb.id} className="grid grid-cols-[8rem_1fr] items-center gap-2">
-                  <p className={cn("truncate text-xs", tb.out ? "text-slate-400 line-through" : "text-slate-700")}>
-                    {tb.label} <span className="text-muted">· {tb.capacity}</span>
-                  </p>
-                  <div className={cn("relative h-10 rounded-md border", tb.out ? "bg-slate-100" : "border-emerald-200 bg-emerald-50")}>
+                <div key={tb.id} className="grid grid-cols-[9rem_1fr] items-center gap-2">
+                  <div className={cn("min-w-0", tb.out && "text-slate-400 line-through")}>
+                    <p className="truncate text-sm font-medium text-slate-900">{tb.label}</p>
+                    <p className="text-[11px] text-muted">{tb.capacity} {t("seats")} · {tb.out ? t("Out of service") : tb.blocks.length ? `${tb.blocks.length} ${t("booking")}` : t("Free all day")}</p>
+                  </div>
+                  <div className={cn("relative h-12 rounded-md border", tb.out ? "bg-slate-100" : "border-emerald-200 bg-emerald-50")}>
                     {timeline.ticks.map((k) => (
-                      <span key={k.label} className="absolute inset-y-0 w-px bg-emerald-100" style={{ left: `${k.left}%` }} />
+                      <span key={k.label} className="absolute inset-y-0 w-px bg-emerald-200/70" style={{ left: `${k.left}%` }} />
                     ))}
+                    {nowLeft != null ? <span className="absolute -inset-y-1 z-[1] w-0.5 bg-red-500" style={{ left: `${nowLeft}%` }} title={t("Now")} /> : null}
                     {tb.blocks.map((b) => {
-                      const cls = cn("absolute inset-y-0.5 overflow-hidden rounded border px-1.5 text-[11px] leading-tight", BLOCK[b.type ?? "other"] ?? BLOCK.other);
+                      const cls = cn("absolute inset-y-0.5 overflow-hidden flex flex-col justify-center rounded border-l-4 px-1.5 text-xs leading-tight shadow-xs", BLOCK[b.type ?? "other"] ?? BLOCK.other);
                       const inner = (
                         <>
                           <span className="block truncate font-semibold">{b.name} · {b.party}</span>
@@ -65,7 +69,10 @@ export function TableTimeline({ timeline, typeLabel, t, linkTo }: {
       </div>
       <p className="flex flex-wrap items-center gap-3 text-xs text-muted">
         <span className="flex items-center gap-1"><span className="size-3 rounded border border-emerald-200 bg-emerald-50" />{t("Free")}</span>
-        <span className="flex items-center gap-1"><span className="size-3 rounded border border-slate-400 bg-slate-200" />{t("Booked")}</span>
+        {(["internal", "kol", "media", "other"] as const).map((k) => (
+          <span key={k} className="flex items-center gap-1"><span className={cn("size-3 rounded border", BLOCK[k])} />{typeLabel(k)}</span>
+        ))}
+        {nowLeft != null ? <span className="flex items-center gap-1"><span className="h-3 w-0.5 bg-red-500" />{t("Now")}</span> : null}
       </p>
     </div>
   );

@@ -16,6 +16,8 @@ import { FloorPlanMap, type PlanMarker } from "@/components/floor-plan-map";
 import { floorPlanFor } from "@/lib/floor-plans";
 import { TableTimeline } from "@/components/table-timeline";
 import { buildTimeline } from "@/lib/domain/table-timeline";
+import { buildTableMonth } from "@/lib/domain/table-month";
+import { TableMonthGrid } from "@/components/table-month-grid";
 import { splitCustomerType } from "@/lib/domain/request-tags";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
@@ -46,6 +48,12 @@ const SLOT = {
   past: "border-slate-200 bg-slate-50 text-slate-400",
 } as const;
 
+const addDays = (d: string, n: number) => {
+  const x = new Date(`${d}T12:00:00Z`);
+  x.setUTCDate(x.getUTCDate() + n);
+  return x.toISOString().slice(0, 10);
+};
+
 export default async function AvailabilityPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t, locale } = await getStaffT();
   const dl = STAFF_DATE_LOCALES[locale];
@@ -60,6 +68,7 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
   const monthParam = pickParam(sp.month);
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : date.slice(0, 7);
   const timeParam = pickParam(sp.time);
+  const tlView = pickParam(sp.tl) === "month" ? "month" : "day";
   const party = Math.min(200, Math.max(1, Number(pickParam(sp.party) ?? 2) || 2));
 
   const supabase = await createClient();
@@ -104,6 +113,44 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
           details,
         })
       : null;
+  // Month view of the same card: bookings per table per day.
+  let tableMonth: ReturnType<typeof buildTableMonth> | null = null;
+  if (tlView === "month") {
+    const { data: monthRes } = await supabase
+      .from("reservations")
+      .select("id, reservation_date, reservation_time, customer_name, party_size, status, internal_notes, reservation_tables(table_id)")
+      .eq("restaurant_id", restaurantId)
+      .gte("reservation_date", `${month}-01`)
+      .lte("reservation_date", `${month}-31`)
+      .not("status", "in", "(cancelled,no_show)");
+    tableMonth = buildTableMonth({
+      month,
+      tables: cap.config.tables
+        .filter((x) => x.is_active)
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+        .map((x) => ({ id: x.id, label: x.label, capacity: x.max_capacity, areaId: x.area_id ?? null, out: false })),
+      areas,
+      bookings: (monthRes ?? []).map((r) => ({
+        id: r.id,
+        date: r.reservation_date,
+        time: r.reservation_time,
+        name: r.customer_name,
+        party: r.party_size,
+        type: splitCustomerType(r.internal_notes).type,
+        status: r.status,
+        tableIds: (r.reservation_tables ?? []).map((x: { table_id: string }) => x.table_id),
+      })),
+    });
+  }
+  const closedDays = new Set(rows.filter((r) => r.status === "closed").map((r) => r.date));
+  let nowLeft: number | null = null;
+  if (timeline && date === today) {
+    const nowHm = new Date().toLocaleTimeString("en-GB", { timeZone: restaurant.timezone, hour: "2-digit", minute: "2-digit", hour12: false });
+    const m = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
+    const span = m(timeline.end) - m(timeline.start) || 1440 - m(timeline.start);
+    const pos = ((m(nowHm) - m(timeline.start)) / span) * 100;
+    nowLeft = pos >= 0 && pos <= 100 ? pos : null;
+  }
   const plan = floorPlanFor(restaurant.slug);
   const stateById = new Map(rooms.flatMap((r) => r.tables.map((x) => [x.id, x.state] as const)));
   const planMarkers: PlanMarker[] = cap.config.tables
@@ -289,22 +336,65 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
         </CardContent>
       </Card>
 
-      {timeline ? (
-        <Card>
-          <CardContent className="space-y-3 pt-4">
+      <Card id="by-table">
+        <CardContent className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-slate-900">{t("Bookings by table")}</p>
-              <p className="text-sm text-muted">{fmt(date, { weekday: "short", day: "numeric", month: "short" })} · {t("Green = free, coloured block = booked time")}</p>
+              <p className="text-sm text-muted">
+                {tlView === "month"
+                  ? t("Bookings per table per day. Pick a month to look further ahead.")
+                  : `${fmt(date, { weekday: "long", day: "numeric", month: "long" })} · ${t("Green = free, coloured block = booked time")}`}
+              </p>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-lg border p-0.5 text-sm">
+                <Link href={`${q({ tl: "day" })}#by-table`} className={cn("rounded-md px-3 py-1", tlView === "day" ? "bg-brand-600 text-white" : "text-slate-700 hover:bg-slate-100")}>{t("Day")}</Link>
+                <Link href={`${q({ tl: "month" })}#by-table`} className={cn("rounded-md px-3 py-1", tlView === "month" ? "bg-brand-600 text-white" : "text-slate-700 hover:bg-slate-100")}>{t("Month")}</Link>
+              </div>
+              {tlView === "month" ? (
+                <>
+                  <Button asChild size="sm" variant="outline"><Link href={`${q({ tl: "month", month: shiftMonth(month, -1), date: `${shiftMonth(month, -1)}-01` })}#by-table`} aria-label={t("Previous month")}><ChevronLeft /></Link></Button>
+                  <AutoSubmitForm className="flex items-center gap-2">
+                    <input type="hidden" name="restaurant" value={restaurantId} />
+                    <input type="hidden" name="party" value={party} />
+                    <input type="hidden" name="tl" value="month" />
+                    <Input type="month" name="month" defaultValue={month} className="h-8 w-40" aria-label={t("Month")} />
+                  </AutoSubmitForm>
+                  <Button asChild size="sm" variant="outline"><Link href={`${q({ tl: "month", month: shiftMonth(month, 1), date: `${shiftMonth(month, 1)}-01` })}#by-table`} aria-label={t("Next month")}><ChevronRight /></Link></Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild size="sm" variant="outline"><Link href={`${q({ tl: "day", date: addDays(date, -1), month: addDays(date, -1).slice(0, 7) })}#by-table`} aria-label={t("Previous day")}><ChevronLeft /></Link></Button>
+                  <Button asChild size="sm" variant="ghost"><Link href={`${q({ tl: "day", date: today, month: today.slice(0, 7) })}#by-table`}>{t("Today")}</Link></Button>
+                  <Button asChild size="sm" variant="outline"><Link href={`${q({ tl: "day", date: addDays(date, 1), month: addDays(date, 1).slice(0, 7) })}#by-table`} aria-label={t("Next day")}><ChevronRight /></Link></Button>
+                </>
+              )}
+            </div>
+          </div>
+          {tlView === "month" && tableMonth ? (
+            <TableMonthGrid
+              data={tableMonth}
+              today={today}
+              selected={date}
+              closed={closedDays}
+              dayHref={(d) => `${q({ tl: "day", date: d, month: d.slice(0, 7) })}#by-table`}
+              weekday={(d) => fmt(d, { weekday: "narrow" })}
+              t={t}
+            />
+          ) : timeline ? (
             <TableTimeline
               timeline={timeline}
+              nowLeft={nowLeft}
               t={t}
               typeLabel={(k) => (k === "other" ? t("Other") : CUSTOMER_TYPE_LABELS[k as keyof typeof CUSTOMER_TYPE_LABELS] ?? k)}
               linkTo={ctx.pages.includes("reservations") && roleCan(ctx.role, "reservation.view") ? (id) => `/reservations/${id}` : null}
             />
-          </CardContent>
-        </Card>
-      ) : null}
+          ) : (
+            <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-muted">{t("Closed on this day")}</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
