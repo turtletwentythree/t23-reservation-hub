@@ -26,8 +26,8 @@ export function TableTimeline({ timeline, typeLabel, t, linkTo, nowLeft }: {
           <div className="sticky top-0 z-10 grid grid-cols-[9rem_1fr] gap-2 bg-white pb-1">
             <span />
             <div className="relative h-5 text-xs font-medium tabular-nums text-slate-600">
-              {timeline.ticks.map((k) => (
-                <span key={k.label} className="absolute -translate-x-1/2" style={{ left: `${k.left}%` }}>{k.label}</span>
+              {timeline.ticks.map((k, i) => (
+                <span key={k.label} className={cn("absolute", i === timeline.ticks.length - 1 ? "-translate-x-full" : i === 0 ? "" : "-translate-x-1/2")} style={{ left: `${k.left}%` }}>{k.label}</span>
               ))}
             </div>
           </div>
