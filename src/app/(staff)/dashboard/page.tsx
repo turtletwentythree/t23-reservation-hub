@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { INTERIM_MENU } from "@/components/layout/nav";
-import { InterimDashboard } from "./interim-dashboard";
+import { StaffDashboard } from "./staff-dashboard";
 import { requireStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getBookingSources, pickParam, todayIn } from "@/lib/data/common";
@@ -19,8 +19,8 @@ export const metadata = { title: "Dashboard" };
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const ctx = await requireStaff("dashboard.view", "dashboard");
   const sp = await searchParams;
-  // During the interim phone / LINE period the dashboard is the capacity overview.
-  if (INTERIM_MENU) return <InterimDashboard ctx={ctx} params={{ restaurant: pickParam(sp.restaurant), view: pickParam(sp.view), date: pickParam(sp.date), from: pickParam(sp.from), to: pickParam(sp.to) }} />;
+  // During the interim phone / LINE period the dashboard is the per-restaurant service overview.
+  if (INTERIM_MENU) return <StaffDashboard ctx={ctx} params={{ restaurant: pickParam(sp.restaurant), date: pickParam(sp.date) }} />;
   const { t } = await getStaffT();
   const date = pickParam(sp.date) ?? todayIn();
   const source = pickParam(sp.source) ?? "";

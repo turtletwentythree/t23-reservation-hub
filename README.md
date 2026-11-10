@@ -14,7 +14,7 @@ Built with Next.js 15 (App Router, Server Actions), TypeScript, Tailwind CSS v4,
 
 ## Features
 
-- **Dashboard**: today's reservations, covers, arrivals, no-shows and occupancy. Filter by branch or date. Includes a cross-branch comparison.
+- **Dashboard**: one restaurant, one day (today by default). Guests booked against the day's seats, guests in the restaurant right now and still to arrive, phone / LINE requests waiting, a *Needs attention* list (late guests, over-capacity days, requests for full days, bookings with no table or not confirmed, allergies, special occasions), the arrivals run sheet, guests in the restaurant per half hour, the next 14 days, the month so far against the month before (occupancy, cancellations and no-shows, guest types, busiest weekdays, booking channels, decline reasons) and all restaurants side by side.
 - **Reservations**: create, edit, cancel and track status (pending → confirmed → arrived → seated → completed, or cancelled / no-show). Every change is recorded in history and audit logs.
 - **Double-booking prevention**: enforced in the database by a Postgres exclusion constraint on (table, time range including buffer), so a conflict cannot be saved however the request arrives.
 - **Availability engine**: works from opening hours and date overrides, last seating, turn time by party size, buffers, booking interval, advance limits, table combinations and table service status.

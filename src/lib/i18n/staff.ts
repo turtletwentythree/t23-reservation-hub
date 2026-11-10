@@ -10,9 +10,12 @@ export function toStaffLocale(v: string | null | undefined): StaffLocale {
   return v === "th" || v === "fr" ? v : "en";
 }
 
+import { DASHBOARD_T } from "./staff-dashboard";
+
 type Entry = { th: string; fr: string };
 
 const T: Record<string, Entry> = {
+  ...DASHBOARD_T,
   // Navigation
   Dashboard: { th: "แดชบอร์ด", fr: "Tableau de bord" },
   Reservations: { th: "การจอง", fr: "Réservations" },
