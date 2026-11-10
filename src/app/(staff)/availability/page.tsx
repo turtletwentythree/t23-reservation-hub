@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { requireStaff } from "@/lib/auth/session";
 import { getStaffT } from "@/lib/i18n/staff-server";
 import { STAFF_DATE_LOCALES } from "@/lib/i18n/staff";
@@ -16,7 +16,7 @@ import { FloorPlanMap, type PlanMarker } from "@/components/floor-plan-map";
 import { floorPlanFor } from "@/lib/floor-plans";
 import { TableTimeline } from "@/components/table-timeline";
 import { buildTimeline } from "@/lib/domain/table-timeline";
-import { buildTableMonth } from "@/lib/domain/table-month";
+import { buildTableMonth, daysOfMonth } from "@/lib/domain/table-month";
 import { TableMonthCalendar } from "@/components/table-month-calendar";
 import { splitCustomerType } from "@/lib/domain/request-tags";
 import { Card, CardContent, EmptyState, PageHeader } from "@/components/ui/card";
@@ -222,6 +222,13 @@ export default async function AvailabilityPage({ searchParams }: { searchParams:
               <span className="min-w-36 text-center text-lg font-semibold text-slate-900">{fmt(`${month}-01`, { month: "long", year: "numeric" })}</span>
               <Button asChild size="sm" variant="outline"><Link href={q({ month: shiftMonth(month, 1), date: `${shiftMonth(month, 1)}-01` })} aria-label={t("Next month")}><ChevronRight /></Link></Button>
               <Button asChild size="sm" variant="ghost"><Link href={q({ month: today.slice(0, 7), date: today })}>{t("Today")}</Link></Button>
+              {roleCan(ctx.role, "reservation.view") ? (
+                <Button asChild size="sm" variant="outline">
+                  <a href={`/api/export/reservations?${new URLSearchParams({ format: "xlsx", restaurant: restaurantId, from: `${month}-01`, to: daysOfMonth(month).at(-1)! })}`}>
+                    <Download />{" "}{t("Export Excel")}
+                  </a>
+                </Button>
+              ) : null}
               <div className="ml-auto flex gap-1.5 text-xs">
                 <span className="rounded-md bg-amber-100 px-2 py-0.5 font-medium text-amber-800">FULL {fullDays}</span>
                 <span className="rounded-md bg-red-100 px-2 py-0.5 font-medium text-red-700">OVER CAP {overDays}</span>

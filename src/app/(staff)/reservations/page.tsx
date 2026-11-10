@@ -68,6 +68,7 @@ export default async function ReservationsPage({ searchParams }: { searchParams:
         description={`${count ?? 0} ${t("reservations")} · ${from} → ${to}`}
         actions={
           <>
+            <Button asChild><a href={`/api/export/reservations?${params}&format=xlsx`}><Download />{" "}{t("Export Excel")}</a></Button>
             <Button asChild variant="outline"><a href={`/api/export/reservations?${params}`}><Download />{" "}{t("CSV")}</a></Button>
             {roleCan(ctx.role, "reservation.write") ? (
               <Button asChild><Link href="/reservations/new"><Plus />{" "}{t("New reservation")}</Link></Button>
