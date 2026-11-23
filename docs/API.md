@@ -87,4 +87,4 @@ function verify(secret, rawBody, header) {
 - `POST /api/webhooks/payments/stripe`: the Stripe signature is verified with `STRIPE_WEBHOOK_SECRET`.
 - `POST /api/webhooks/payments/omise`: the event is re-fetched from the Omise API before it is trusted.
 
-A successful payment marks the deposit as paid. The reservation's `payment_status` is recalculated from its payments and refunds.
+A successful payment marks the deposit as paid and confirms a booking that was waiting for it (unless the restaurant confirms online bookings by hand). The reservation's `payment_status` is recalculated from its payments and refunds.

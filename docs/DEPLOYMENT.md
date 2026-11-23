@@ -44,7 +44,10 @@ Production runs on Supabase Cloud (database, auth, realtime) and Vercel (Next.js
 | `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Optional; LINE |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Optional; WhatsApp |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Optional; deposits by card |
-| `OMISE_SECRET_KEY` | Optional; deposits by card or PromptPay |
+| `OMISE_SECRET_KEY` | Optional; online deposits and prepayments by PromptPay QR or card. Use `skey_test_…` until the merchant account is live |
+| `NEXT_PUBLIC_OMISE_PUBLIC_KEY` | Optional; needed for card payments (Omise.js tokenises the card in the browser). Without it only PromptPay is offered |
+| `PAYMENT_GATEWAY` | Optional; `omise`, `stripe` or `simulator`. Default: the first configured real gateway |
+| `PAYMENT_SIMULATOR` | Demo/test only: `1` shows "simulate payment" buttons instead of a real gateway. Ignored on Vercel production |
 | `FOODSTORY_*` | Leave blank until FoodStory API access is confirmed |
 
    Generate secrets with `openssl rand -base64 32`.

@@ -306,6 +306,8 @@ const T: Record<string, Entry> = {
   "No zone": { th: "ไม่มีโซน", fr: "Sans zone" },
   "No-show %": { th: "% ไม่มา", fr: "% absents" },
   "No-show fee": { th: "ค่าปรับไม่มาตามนัด", fr: "Frais de non-présentation" },
+  "Hold table while guest pays (minutes)": { th: "กันโต๊ะระหว่างรอลูกค้าชำระเงิน (นาที)", fr: "Garder la table pendant le paiement (minutes)" },
+  "Online bookings with a deposit are cancelled if not paid in this time": { th: "การจองออนไลน์ที่ต้องมัดจำจะถูกยกเลิกหากไม่ชำระภายในเวลานี้", fr: "Les réservations en ligne avec acompte sont annulées si elles ne sont pas payées dans ce délai" },
   "No-show rate": { th: "อัตราไม่มาตามนัด", fr: "Taux d'absence" },
   "Nobody is waiting.": { th: "ไม่มีคนรอคิว", fr: "Personne n'attend." },
   "None": { th: "ไม่มี", fr: "Aucun" },

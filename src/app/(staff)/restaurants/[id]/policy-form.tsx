@@ -80,6 +80,7 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
             <Field label={t("Amount")}><Input type="number" step="0.01" name="deposit_amount" defaultValue={Number(p?.deposit_amount ?? 0)} /></Field>
             <Field label={t("Applies from party of")}><Input type="number" name="deposit_min_party_size" defaultValue={p?.deposit_min_party_size ?? 1} /></Field>
             <Field label={t("No-show fee")}><Input type="number" step="0.01" name="no_show_fee_amount" defaultValue={Number(p?.no_show_fee_amount ?? 0)} /></Field>
+            <Field label={t("Hold table while guest pays (minutes)")} hint={t("Online bookings with a deposit are cancelled if not paid in this time")}><Input type="number" min={5} max={1440} name="payment_hold_minutes" defaultValue={p?.payment_hold_minutes ?? 15} /></Field>
           </div>
         </div>
         <div>

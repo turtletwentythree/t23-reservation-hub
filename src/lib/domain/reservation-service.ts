@@ -1,4 +1,5 @@
 import "server-only";
+import { computeDeposit, type DepositRule } from "@/lib/domain/deposit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Reservation } from "@/lib/supabase/types";
@@ -137,12 +138,12 @@ export async function getAvailability(
   return { ...result, config };
 }
 
-export function depositFor(policy: Database["public"]["Tables"]["booking_policies"]["Row"] | null, partySize: number, bookingTypeDeposit?: number | null) {
-  if (bookingTypeDeposit != null) return bookingTypeDeposit * partySize;
-  if (!policy || policy.deposit_type === "none" || partySize < policy.deposit_min_party_size) return 0;
-  const amount = Number(policy.deposit_amount);
-  if (policy.deposit_type === "per_person") return amount * partySize;
-  return amount; // flat or full_prepayment (amount = prepayment per booking)
+export function depositRule(policy: Database["public"]["Tables"]["booking_policies"]["Row"] | null): DepositRule | null {
+  return policy ? { type: policy.deposit_type, amount: Number(policy.deposit_amount), minParty: policy.deposit_min_party_size } : null;
+}
+
+export function depositFor(policy: Database["public"]["Tables"]["booking_policies"]["Row"] | null, partySize: number, bookingTypeDeposit?: number | null, bookingTypePrice?: number | null) {
+  return computeDeposit(depositRule(policy), partySize, bookingTypeDeposit, bookingTypePrice);
 }
 
 function mapDbError(error: { code?: string; message: string; hint?: string | null }): DomainError {

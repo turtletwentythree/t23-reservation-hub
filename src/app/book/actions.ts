@@ -7,8 +7,8 @@ import { publicBookingSchema, dateString, timeString } from "@/lib/validation/sc
 import { createReservation, depositFor, DomainError, getAvailability, availabilityMessage, loadRestaurantConfig, updateReservationRow } from "@/lib/domain/reservation-service";
 import { durationForParty, localToUtc } from "@/lib/domain/availability";
 import { reservationEvent } from "@/lib/events";
-import { GATEWAYS } from "@/lib/integrations/payments/registry";
-import { manageToken, manageUrl, verifyManageToken } from "@/lib/tokens";
+import { bookingGateway } from "@/lib/integrations/payments/registry";
+import { manageToken, verifyManageToken } from "@/lib/tokens";
 
 /**
  * Public (unauthenticated) booking actions. They run on the server with the service-role
@@ -29,6 +29,8 @@ export async function getPublicSlotsAction(input: { slug: string; date: string; 
     if (args.ignoreReservationId && !verifyManageToken(args.ignoreReservationId, args.token)) throw new DomainError("forbidden", "Invalid link");
     const r = await publicRestaurant(args.slug);
     const admin = createAdminClient();
+    // Unpaid holds that ran out give their tables back before we list free times.
+    await admin.rpc("release_expired_payment_holds", { p_restaurant_id: r.id });
     let duration: number | undefined;
     if (args.bookingTypeId) {
       const { data: bt } = await admin.from("booking_types").select("duration_minutes, restaurant_id, is_online, is_active").eq("id", args.bookingTypeId).maybeSingle();
@@ -57,13 +59,20 @@ export async function publicBookAction(raw: unknown): Promise<ActionResult<{ red
 
     let duration = durationForParty(config.policy, input.party_size);
     let typeDeposit: number | null = null;
+    let typePrice: number | null = null;
     if (input.booking_type_id) {
       const { data: bt } = await admin.from("booking_types").select("*").eq("id", input.booking_type_id).maybeSingle();
       if (!bt || bt.restaurant_id !== r.id || !bt.is_online || !bt.is_active) throw new DomainError("validation", "Invalid booking type");
       if (bt.duration_minutes) duration = bt.duration_minutes;
       typeDeposit = bt.deposit_override === null ? null : Number(bt.deposit_override);
+      typePrice = bt.price === null ? null : Number(bt.price);
     }
-    const deposit = depositFor(policy, input.party_size, typeDeposit);
+    await admin.rpc("release_expired_payment_holds", { p_restaurant_id: r.id });
+    const deposit = depositFor(policy, input.party_size, typeDeposit, typePrice);
+    // With a payment gateway the guest pays on our payment page straight away and the table is
+    // held for a few minutes. Without one, the booking waits for staff to collect the deposit.
+    const gateway = deposit > 0 ? bookingGateway() : null;
+    const holdMinutes = policy?.payment_hold_minutes ?? 15;
     const needsApproval = !policy?.auto_confirm_online || (policy?.large_party_threshold != null && input.party_size >= policy.large_party_threshold);
     const status = needsApproval || deposit > 0 ? "pending" : "confirmed";
     const { data: online } = await admin.from("booking_sources").select("id").eq("organization_id", config.restaurant.organization_id).eq("code", "online").maybeSingle();
@@ -107,25 +116,14 @@ export async function publicBookAction(raw: unknown): Promise<ActionResult<{ red
       ]);
     }
 
-    let redirect = `/reservation/${res.reference}?t=${manageToken(res.id)}&new=1`;
-    if (deposit > 0) {
-      const gateway = Object.values(GATEWAYS).find((g) => g.isConfigured());
-      if (gateway) {
-        const back = manageUrl(res.reference, res.id);
-        const co = await gateway.createCheckout({
-          amount: deposit, currency: r.currency, reference: res.reference, description: `${r.name} deposit – ${res.reference}`,
-          successUrl: `${back}&paid=1`, cancelUrl: back, customerEmail: input.email, metadata: { reservation_id: res.id, reference: res.reference },
-        });
-        if (co.ok) {
-          await admin.from("payments").insert({
-            organization_id: config.restaurant.organization_id, restaurant_id: r.id, reservation_id: res.id, kind: "deposit",
-            provider: gateway.name, provider_reference: co.providerReference, checkout_url: co.checkoutUrl, amount: deposit, currency: r.currency, status: "pending",
-          });
-          redirect = co.checkoutUrl;
-        }
-      }
+    const token = manageToken(res.id);
+    if (gateway) {
+      await admin.from("reservations").update({ payment_due_at: new Date(Date.now() + holdMinutes * 60_000).toISOString() }).eq("id", res.id);
+      // The confirmation goes out once the guest has paid (see settlePayment).
+      return ok({ redirect: `/pay/${encodeURIComponent(res.reference)}?t=${token}` });
     }
     await reservationEvent(res.id, "created");
+    const redirect = `/reservation/${res.reference}?t=${token}&new=1`;
     return ok({ redirect });
   } catch (e) {
     return fail(e);

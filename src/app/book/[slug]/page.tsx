@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveLocale } from "@/lib/i18n/dictionaries";
 import { addDays, todayIn } from "@/lib/data/common";
+import { bookingGateway } from "@/lib/integrations/payments/registry";
 import { BookingWizard } from "./booking-wizard";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function BookPage({ params, searchParams }: { params: Promi
         minParty={policy?.min_party_size ?? 1}
         maxParty={policy?.max_party_size ?? 8}
         deposit={{ type: policy?.deposit_type ?? "none", amount: Number(policy?.deposit_amount ?? 0), minParty: policy?.deposit_min_party_size ?? 1 }}
+        paymentHoldMinutes={bookingGateway() ? policy?.payment_hold_minutes ?? 15 : null}
         policyText={(policy?.cancellation_policy as Record<string, string>) ?? {}}
         termsText={(policy?.booking_terms as Record<string, string>) ?? {}}
         bookingTypes={(types ?? []).map((t) => ({ id: t.id, name: t.name as Record<string, string>, description: t.description as Record<string, string> | null, price: t.price === null ? null : Number(t.price), deposit_override: t.deposit_override === null ? null : Number(t.deposit_override) }))}

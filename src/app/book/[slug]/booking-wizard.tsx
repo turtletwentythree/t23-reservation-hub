@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
 import { DATE_LOCALES, DICTIONARIES, LOCALE_NAMES, LOCALES, type Locale } from "@/lib/i18n/dictionaries";
+import { computeDeposit } from "@/lib/domain/deposit";
 import { getPublicSlotsAction, publicBookAction } from "../actions";
 
 type BookingType = { id: string; name: Record<string, string>; description: Record<string, string> | null; price: number | null; deposit_override: number | null };
@@ -19,6 +20,8 @@ type Props = {
   minParty: number;
   maxParty: number;
   deposit: { type: string; amount: number; minParty: number };
+  /** Minutes the table is held while the guest pays; null when online payment is not set up. */
+  paymentHoldMinutes: number | null;
   policyText: Record<string, string>;
   termsText: Record<string, string>;
   bookingTypes: BookingType[];
@@ -91,9 +94,8 @@ export function BookingWizard(p: Props) {
   const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, marketing_consent: false, website: "" });
 
   const selectedType = p.bookingTypes.find((b) => b.id === typeId);
-  const depositAmount = selectedType?.deposit_override != null
-    ? selectedType.deposit_override * party
-    : p.deposit.type === "none" || party < p.deposit.minParty ? 0 : p.deposit.type === "per_person" ? p.deposit.amount * party : p.deposit.amount;
+  const depositAmount = computeDeposit(p.deposit, party, selectedType?.deposit_override, selectedType?.price);
+  const paysOnline = depositAmount > 0 && p.paymentHoldMinutes != null;
 
   useEffect(() => {
     setTime("");
@@ -132,6 +134,11 @@ export function BookingWizard(p: Props) {
         </div>
       </div>
 
+      <ol className="mb-3 flex gap-2 text-xs font-medium" aria-label="Steps">
+        {[t.stepWhen, t.stepDetails, ...(paysOnline ? [t.stepPay] : [])].map((label, i) => (
+          <li key={label} className={cn("flex-1 rounded-full px-3 py-1.5 text-center", i + 1 === step ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800")}>{i + 1}. {label}</li>
+        ))}
+      </ol>
       {step === 1 ? (
         <div className="space-y-5 rounded-2xl border bg-white p-4 shadow-sm">
           <section>
@@ -216,7 +223,8 @@ export function BookingWizard(p: Props) {
             <p className="font-semibold text-brand-800">{t.summary}</p>
             <p>{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {time} · {party} {party === 1 ? t.guest : t.guestsPlural}</p>
             {selectedType && p.bookingTypes.length > 1 ? <p>{selectedType.name[locale] || selectedType.name.en}</p> : null}
-            {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
+            {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{p.deposit.type === "full_prepayment" ? t.payAmountPrepayment : t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
+            {paysOnline ? <p className="mt-1 text-xs text-slate-600">{t.payHoldNote.replace("{n}", String(p.paymentHoldMinutes))}</p> : null}
           </div>
           <p className="text-sm font-semibold">{t.yourDetails}</p>
           <Field label={t.fullName}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
@@ -239,7 +247,7 @@ export function BookingWizard(p: Props) {
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" required checked={form.accept_policy} onChange={(e) => setForm({ ...form, accept_policy: e.target.checked })} /> {t.acceptPolicy}</label>
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> {t.marketing}</label>
           {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
-          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : t.confirm}</Button>
+          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : paysOnline ? t.continueToPayment : t.confirm}</Button>
         </form>
       )}
       {!p.embed ? <div className="mt-8 flex flex-col items-center gap-1"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-5 w-auto opacity-80" /><p className="text-[11px] text-muted">T23 Reservation Hub</p></div> : null}

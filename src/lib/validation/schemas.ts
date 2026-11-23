@@ -108,6 +108,7 @@ export const policySchema = z.object({
   deposit_amount: z.coerce.number().min(0).max(1_000_000),
   deposit_min_party_size: z.coerce.number().int().min(1).max(200),
   no_show_fee_amount: z.coerce.number().min(0).max(1_000_000),
+  payment_hold_minutes: z.coerce.number().int().min(5).max(1440).default(15),
   duration_rules: z
     .array(z.object({ max_party: z.coerce.number().int().min(1).max(200), minutes: z.coerce.number().int().min(15).max(600) }))
     .max(10)
