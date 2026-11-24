@@ -20,6 +20,18 @@ async function stripe(path: string, body?: URLSearchParams, method = "POST") {
 export const stripeGateway: PaymentGateway = {
   name: "stripe",
   isConfigured: () => Boolean(process.env.STRIPE_SECRET_KEY),
+  // Stripe Checkout is a hosted page (cards, and PromptPay when enabled on the Stripe account).
+  methods: () => ["checkout"],
+  async getStatus(sessionId) {
+    try {
+      const s = await stripe(`/checkout/sessions/${encodeURIComponent(sessionId)}`, undefined, "GET");
+      if (s.payment_status === "paid") return "succeeded";
+      if (s.status === "expired") return "failed";
+      return "pending";
+    } catch {
+      return null;
+    }
+  },
   async createCheckout(req) {
     try {
       const p = new URLSearchParams({

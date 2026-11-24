@@ -58,7 +58,7 @@ export async function updatePolicyAction(restaurantId: string, raw: unknown): Pr
     const input = policySchema.parse(raw);
     await assertPermission("restaurant.manage", restaurantId);
     const supabase = await createClient();
-    const { cancellation_policy_en, cancellation_policy_th, cancellation_policy_ja, cancellation_policy_fr, large_party_threshold, max_online_bookings_per_day, max_online_covers_per_day, ...rest } = input;
+    const { cancellation_policy_en, cancellation_policy_th, cancellation_policy_ja, cancellation_policy_fr, booking_terms_en, booking_terms_th, booking_terms_ja, booking_terms_fr, large_party_threshold, max_online_bookings_per_day, max_online_covers_per_day, ...rest } = input;
     const row = {
       ...rest,
       large_party_threshold: large_party_threshold ?? null,
@@ -66,6 +66,7 @@ export async function updatePolicyAction(restaurantId: string, raw: unknown): Pr
       max_online_covers_per_day: max_online_covers_per_day ?? null,
       duration_rules: [...input.duration_rules].sort((a, b) => a.max_party - b.max_party),
       cancellation_policy: { en: cancellation_policy_en ?? "", th: cancellation_policy_th ?? "", ja: cancellation_policy_ja ?? "", fr: cancellation_policy_fr ?? "" },
+      booking_terms: { en: booking_terms_en ?? "", th: booking_terms_th ?? "", ja: booking_terms_ja ?? "", fr: booking_terms_fr ?? "" },
       restaurant_id: restaurantId,
     };
     const { error } = await supabase.from("booking_policies").upsert(row, { onConflict: "restaurant_id" });

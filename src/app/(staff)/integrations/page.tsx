@@ -23,7 +23,7 @@ function liveStatus(provider: string): { label: string; tone: "green" | "slate" 
 const ENV_HINT: Record<string, string> = {
   resend: "RESEND_API_KEY, EMAIL_FROM", twilio: "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER", line: "LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET",
   whatsapp: "WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID", stripe: "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (webhook: /api/webhooks/payments/stripe)",
-  omise: "OMISE_SECRET_KEY (webhook: /api/webhooks/payments/omise)", foodstory: "FOODSTORY_API_BASE_URL, FOODSTORY_API_KEY — after vendor confirms API access",
+  omise: "OMISE_SECRET_KEY, NEXT_PUBLIC_OMISE_PUBLIC_KEY (cards). Test keys: skey_test_/pkey_test_. Webhook: /api/webhooks/payments/omise", foodstory: "FOODSTORY_API_BASE_URL, FOODSTORY_API_KEY — after vendor confirms API access",
   google_business: "Add each restaurant's /book/<slug> URL as the reservation link in Google Business Profile",
 };
 

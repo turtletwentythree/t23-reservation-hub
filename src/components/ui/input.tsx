@@ -56,7 +56,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
 }
 
 export function Field({ label, htmlFor, hint, error, children, className }: {
-  label: string;
+  label: React.ReactNode;
   htmlFor?: string;
   hint?: string;
   error?: string;

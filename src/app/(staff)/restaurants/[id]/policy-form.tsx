@@ -16,6 +16,7 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
   const p = policy;
   const [rules, setRules] = useState<{ max_party: number; minutes: number }[]>((p?.duration_rules as { max_party: number; minutes: number }[]) ?? []);
   const cp = (p?.cancellation_policy ?? {}) as Record<string, string>;
+  const bt = (p?.booking_terms ?? {}) as Record<string, string>;
 
   return (
     <form
@@ -80,6 +81,10 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
             <Field label={t("Amount")}><Input type="number" step="0.01" name="deposit_amount" defaultValue={Number(p?.deposit_amount ?? 0)} /></Field>
             <Field label={t("Applies from party of")}><Input type="number" name="deposit_min_party_size" defaultValue={p?.deposit_min_party_size ?? 1} /></Field>
             <Field label={t("No-show fee")}><Input type="number" step="0.01" name="no_show_fee_amount" defaultValue={Number(p?.no_show_fee_amount ?? 0)} /></Field>
+            <Field label={t("Hold table while guest pays (minutes)")} hint={t("Online bookings with a deposit are cancelled if not paid in this time")}><Input type="number" min={5} max={1440} name="payment_hold_minutes" defaultValue={p?.payment_hold_minutes ?? 15} /></Field>
+            <Field label={t("Service charge (%)")} hint={t("Added to a prepaid course price")}><Input type="number" step="0.01" min={0} max={30} name="service_charge_percent" defaultValue={Number(p?.service_charge_percent ?? 0)} /></Field>
+            <Field label={t("VAT (%)")} hint={t("Added after the service charge")}><Input type="number" step="0.01" min={0} max={30} name="vat_percent" defaultValue={Number(p?.vat_percent ?? 0)} /></Field>
+            <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" name="dietary_question_required" defaultChecked={p?.dietary_question_required ?? false} />{" "}{t("Guests must answer the dietary / allergy question")}</label>
           </div>
         </div>
         <div>
@@ -89,6 +94,16 @@ export function PolicyForm({ restaurantId, policy, readOnly }: { restaurantId: s
             <Field label="ไทย"><Textarea name="cancellation_policy_th" rows={3} defaultValue={cp.th ?? ""} /></Field>
             <Field label={t("Français")}><Textarea name="cancellation_policy_fr" rows={3} defaultValue={cp.fr ?? ""} /></Field>
           </div>
+        </div>
+        <div>
+          <h4 className="mb-2 text-sm font-semibold">{t("Important information shown to guests")}</h4>
+          <p className="mb-2 text-xs text-muted">{t("Menu, dress code, seating time limit, children, corkage and similar notes. One per line.")}</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label={t("English")}><Textarea name="booking_terms_en" rows={4} defaultValue={bt.en ?? ""} /></Field>
+            <Field label="ไทย"><Textarea name="booking_terms_th" rows={4} defaultValue={bt.th ?? ""} /></Field>
+            <Field label={t("Français")}><Textarea name="booking_terms_fr" rows={4} defaultValue={bt.fr ?? ""} /></Field>
+          </div>
+          <input type="hidden" name="booking_terms_ja" value={bt.ja ?? ""} />
         </div>
         {!readOnly ? <Button type="submit">{pending ? t("Saving…") : t("Save booking rules")}</Button> : null}
       </fieldset>

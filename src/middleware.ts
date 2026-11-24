@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/login", "/book", "/reservation", "/embed", "/api/v1", "/api/public", "/api/webhooks", "/api/cron", "/auth"];
+const PUBLIC_PREFIXES = ["/login", "/book", "/privacy", "/reservation", "/pay", "/embed", "/api/v1", "/api/public", "/api/webhooks", "/api/cron", "/auth"];
 
 export async function middleware(request: NextRequest) {
   // If Supabase fell back to the Site URL (return URL not in its allow-list), forward the result to the callback.

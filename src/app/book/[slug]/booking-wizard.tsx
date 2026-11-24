@@ -1,11 +1,12 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
-import { CalendarDays, Clock, Users, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { CalendarDays, Clock, Users, ChevronLeft, ChevronRight, Minus, Plus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/input";
+import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { cn, formatMoney } from "@/lib/utils";
 import { DATE_LOCALES, DICTIONARIES, LOCALE_NAMES, LOCALES, type Locale } from "@/lib/i18n/dictionaries";
+import { computeDeposit, prepaymentBreakdown, type DepositRule } from "@/lib/domain/deposit";
 import { getPublicSlotsAction, publicBookAction } from "../actions";
 
 type BookingType = { id: string; name: Record<string, string>; description: Record<string, string> | null; price: number | null; deposit_override: number | null };
@@ -18,7 +19,11 @@ type Props = {
   maxDate: string;
   minParty: number;
   maxParty: number;
-  deposit: { type: string; amount: number; minParty: number };
+  deposit: DepositRule;
+  /** The guest must answer the dietary / allergy question. */
+  dietaryRequired: boolean;
+  /** Minutes the table is held while the guest pays; null when online payment is not set up. */
+  paymentHoldMinutes: number | null;
   policyText: Record<string, string>;
   termsText: Record<string, string>;
   bookingTypes: BookingType[];
@@ -88,12 +93,15 @@ export function BookingWizard(p: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, startLoad] = useTransition();
   const [submitting, startSubmit] = useTransition();
-  const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, marketing_consent: false, website: "" });
+  const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, accept_privacy_notice: false, health_data_consent: false, dietary_none: false, marketing_consent: false, marketing_channels: ["email"] as ("email" | "sms" | "line")[], website: "" });
+  const hasDietary = Boolean(form.dietary_requirements.trim() || form.allergies.trim());
 
   const selectedType = p.bookingTypes.find((b) => b.id === typeId);
-  const depositAmount = selectedType?.deposit_override != null
-    ? selectedType.deposit_override * party
-    : p.deposit.type === "none" || party < p.deposit.minParty ? 0 : p.deposit.type === "per_person" ? p.deposit.amount * party : p.deposit.amount;
+  const depositAmount = computeDeposit(p.deposit, party, selectedType?.deposit_override, selectedType?.price);
+  const breakdown = prepaymentBreakdown(p.deposit, party, selectedType?.deposit_override, selectedType?.price);
+  const money = (n: number) => formatMoney(n, p.currency);
+  const [purpose, setPurpose] = useState("");
+  const paysOnline = depositAmount > 0 && p.paymentHoldMinutes != null;
 
   useEffect(() => {
     setTime("");
@@ -108,15 +116,16 @@ export function BookingWizard(p: Props) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (form.marketing_consent && form.marketing_channels.length === 0) { setError(t.channelMissing); return; }
     startSubmit(async () => {
-      const res = await publicBookAction({ ...form, restaurant_slug: p.slug, reservation_date: date, reservation_time: time, party_size: party, booking_type_id: typeId || undefined, language: locale });
+      const res = await publicBookAction({ ...form, health_data_consent: hasDietary && form.health_data_consent, dietary_none: !hasDietary && form.dietary_none, marketing_channels: form.marketing_consent ? form.marketing_channels : [], restaurant_slug: p.slug, reservation_date: date, reservation_time: time, party_size: party, booking_type_id: typeId || undefined, language: locale });
       if (!res.ok) { setError(res.error); return; }
       window.location.href = res.data.redirect;
     });
   };
 
   return (
-    <div className={cn("mx-auto w-full max-w-lg", p.embed ? "p-3" : "px-4 py-6")}>
+    <div className={cn("mx-auto w-full max-w-lg md:max-w-4xl", p.embed ? "p-3" : "px-4 py-6 md:px-6 md:py-10")}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-600">{t.bookTable}</p>
@@ -132,8 +141,14 @@ export function BookingWizard(p: Props) {
         </div>
       </div>
 
+      <ol className="mb-3 flex gap-1.5 text-[11px] font-medium sm:gap-2 sm:text-xs" aria-label="Steps">
+        {[t.stepWhen, t.stepDetails, t.stepReview, ...(paysOnline ? [t.stepPay] : [])].map((label, i) => (
+          <li key={label} className={cn("flex-1 rounded-full px-3 py-1.5 text-center", i + 1 === step ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800")}>{i + 1}. {label}</li>
+        ))}
+      </ol>
       {step === 1 ? (
-        <div className="space-y-5 rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="grid gap-5 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-2 md:gap-8 md:p-6">
+          <div className="min-w-0 space-y-5">
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><Users className="size-4 text-brand-600" /> {t.guests}</p>
             <div className="flex items-center gap-3">
@@ -182,6 +197,8 @@ export function BookingWizard(p: Props) {
             <MonthCalendar value={date} onChange={setDate} min={p.today} max={p.maxDate} fmt={fmtDate} />
             <p className="mt-2 text-sm text-muted">{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </section>
+          </div>
+          <div className="min-w-0 space-y-5 md:border-l md:pl-8">
           {p.bookingTypes.length > 1 ? (
             <section>
               <p className="mb-2 text-sm font-medium">{t.bookingType}</p>
@@ -200,7 +217,7 @@ export function BookingWizard(p: Props) {
             {loading ? <p className="text-sm text-muted">{t.loading}</p> : times && times.length === 0 ? (
               <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{reason === "closed" ? t.closed : reason === "fully_booked" ? t.fullyBooked : error ?? t.noTimes}</p>
             ) : (
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5">
                 {(times ?? []).map((x) => (
                   <button key={x} type="button" onClick={() => setTime(x)} className={cn("rounded-xl border py-2.5 text-sm font-medium tabular-nums", time === x ? "border-accent-500 bg-accent-500 text-white" : "bg-white hover:border-accent-300")}>{x}</button>
                 ))}
@@ -208,41 +225,141 @@ export function BookingWizard(p: Props) {
             )}
           </section>
           <Button size="lg" className="w-full" disabled={!time} onClick={() => setStep(2)}>{t.next}</Button>
+          </div>
         </div>
       ) : (
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border bg-white p-4 shadow-sm">
-          <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-muted"><ChevronLeft className="size-4" /> {t.back}</button>
+        <div className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8 md:p-6">
+          <div className="min-w-0 space-y-4 md:sticky md:top-6 md:self-start">
+          <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="flex items-center gap-1 text-sm text-muted"><ChevronLeft className="size-4" /> {t.back}</button>
           <div className="rounded-xl bg-brand-50 p-3 text-sm">
-            <p className="font-semibold text-brand-800">{t.summary}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-semibold text-brand-800">{t.summary}</p>
+              <button type="button" onClick={() => setStep(1)} className="shrink-0 rounded-full bg-brand-700 px-3 py-1 text-xs font-semibold text-white hover:bg-brand-800">{t.changeDateTime}</button>
+            </div>
             <p>{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {time} · {party} {party === 1 ? t.guest : t.guestsPlural}</p>
             {selectedType && p.bookingTypes.length > 1 ? <p>{selectedType.name[locale] || selectedType.name.en}</p> : null}
-            {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
+            {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{p.deposit.type === "full_prepayment" ? t.payAmountPrepayment : t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
+            {paysOnline ? <p className="mt-1 text-xs text-slate-600">{t.payHoldNote.replace("{n}", String(p.paymentHoldMinutes))}</p> : null}
           </div>
+          </div>
+          {step === 2 ? (
+          <form onSubmit={(e) => { e.preventDefault(); if (hasDietary && !form.health_data_consent) { setError(t.healthMissing); return; } if (p.dietaryRequired && !hasDietary && !form.dietary_none) { setError(t.dietaryMissing); return; } setError(null); setStep(3); window.scrollTo({ top: 0 }); }} className="min-w-0 space-y-4 md:border-l md:pl-8">
           <p className="text-sm font-semibold">{t.yourDetails}</p>
-          <Field label={t.fullName}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
+          <Field label={<>{t.fullName} <Req t={t} /></>}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t.phone}><Input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
-            <Field label={t.email}><Input required type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+            <Field label={<>{t.phone} <Req t={t} /></>}><Input required type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+            <Field label={<>{t.email} <Req t={t} /></>}><Input required type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
           </div>
-          <Field label={t.occasion}><Input placeholder={t.occasionPh} value={form.special_occasion} onChange={(e) => setForm({ ...form, special_occasion: e.target.value })} /></Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t.dietary}><Input value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} /></Field>
-            <Field label={t.allergies}><Input value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} /></Field>
-          </div>
+          <Field label={t.purpose}>
+            <Select value={purpose} onChange={(e) => { setPurpose(e.target.value); setForm({ ...form, special_occasion: e.target.value ? DICTIONARIES.en.purposes[e.target.value as keyof typeof t.purposes] : "" }); }}>
+              <option value="">{t.purposePh}</option>
+              {Object.entries(t.purposes).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </Select>
+          </Field>
+          <fieldset className="space-y-2 rounded-xl border p-3" aria-describedby="dietary-q">
+            <p id="dietary-q" className="text-sm font-medium text-slate-800">{t.dietaryQuestion} {p.dietaryRequired ? <Req t={t} /> : null}</p>
+            <p className="text-xs text-muted">{p.dietaryRequired ? t.dietaryRequiredHint : t.dietaryNone}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label={t.dietary}><Input value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} /></Field>
+              <Field label={t.allergies}><Input value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} /></Field>
+            </div>
+            {hasDietary ? (
+              <div className="space-y-1 rounded-lg bg-slate-50 p-2.5">
+                <label className="flex items-start gap-2 text-sm text-slate-800"><input type="checkbox" className="mt-1" required checked={form.health_data_consent} onChange={(e) => setForm({ ...form, health_data_consent: e.target.checked })} /> <span>{t.healthConsent} <Req t={t} /></span></label>
+                <p className="pl-6 text-xs text-muted">{t.healthConsentHint}</p>
+              </div>
+            ) : p.dietaryRequired ? (
+              <label className="flex items-start gap-2 text-sm text-slate-800"><input type="checkbox" className="mt-1" checked={form.dietary_none} onChange={(e) => setForm({ ...form, dietary_none: e.target.checked })} /> {t.dietaryNoneBox}</label>
+            ) : null}
+          </fieldset>
           <Field label={t.requests}><Textarea rows={2} maxLength={1000} value={form.guest_notes} onChange={(e) => setForm({ ...form, guest_notes: e.target.value })} /></Field>
           <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} aria-hidden />
-          <div className="rounded-xl border p-3 text-xs text-slate-600">
-            <p className="mb-1 font-semibold text-slate-800">{t.policy}</p>
-            <p>{p.policyText[locale] || p.policyText.en}</p>
-            {p.termsText[locale] || p.termsText.en ? <p className="mt-1">{p.termsText[locale] || p.termsText.en}</p> : null}
-          </div>
-          <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" required checked={form.accept_policy} onChange={(e) => setForm({ ...form, accept_policy: e.target.checked })} /> {t.acceptPolicy}</label>
-          <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> {t.marketing}</label>
           {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
-          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : t.confirm}</Button>
-        </form>
+          <Button size="lg" className="w-full">{t.reviewNext}</Button>
+          </form>
+          ) : (
+          <form onSubmit={submit} className="min-w-0 space-y-4 md:border-l md:pl-8">
+          <p className="text-base font-semibold">{t.reviewTitle}</p>
+          <section className="rounded-xl border p-3 text-sm">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <p className="font-semibold text-slate-800">{t.reservationDetails}</p>
+              <button type="button" onClick={() => setStep(1)} className="rounded-md border px-2 py-0.5 text-xs font-medium text-slate-700">{t.changeDateTime}</button>
+            </div>
+            <ul className="grid gap-1.5 text-slate-700 sm:grid-cols-2">
+              <li className="flex items-center gap-2"><Store className="size-4 text-muted" /> {p.name}</li>
+              <li className="flex items-center gap-2"><Users className="size-4 text-muted" /> {party} {party === 1 ? t.guest : t.guestsPlural}</li>
+              <li className="flex items-center gap-2"><CalendarDays className="size-4 text-muted" /> {fmtDate(date, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</li>
+              <li className="flex items-center gap-2"><Clock className="size-4 text-muted" /> {time}</li>
+            </ul>
+          </section>
+          <section className="rounded-xl border p-3 text-sm">
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <p className="font-semibold text-slate-800">{t.guestLabel}</p>
+              <button type="button" onClick={() => setStep(2)} className="rounded-md border px-2 py-0.5 text-xs font-medium text-slate-700">{t.edit}</button>
+            </div>
+            <p>{form.customer_name}</p>
+            <p className="text-slate-600">{form.phone} · {form.email}</p>
+            {[purpose && `${t.purpose}: ${t.purposes[purpose as keyof typeof t.purposes]}`, form.dietary_requirements && `${t.dietary}: ${form.dietary_requirements}`, form.allergies && `${t.allergies}: ${form.allergies}`, form.guest_notes && `${t.notesLabel}: ${form.guest_notes}`].filter(Boolean).map((line) => <p key={line as string} className="text-slate-600">{line}</p>)}
+          </section>
+          {depositAmount > 0 ? (
+            <section className="rounded-xl border p-3 text-sm">
+              <p className="mb-2 font-semibold text-slate-800">{t.yourExperience}</p>
+              {breakdown && selectedType ? (
+                <>
+                  <p className="flex justify-between gap-3"><span><span className="text-muted">{party} ×</span> {selectedType.name[locale] || selectedType.name.en}</span><span className="font-medium">{money(breakdown.subtotal)}</span></p>
+                  <div className="mt-2 space-y-0.5 border-t pt-2 text-slate-600">
+                    <p className="flex justify-between"><span>{t.subtotal}</span><span>{money(breakdown.subtotal)}</span></p>
+                    {breakdown.serviceCharge > 0 ? <p className="flex justify-between"><span>{t.serviceCharge} ({p.deposit.serviceChargePct}%)</span><span>{money(breakdown.serviceCharge)}</span></p> : null}
+                    {breakdown.vat > 0 ? <p className="flex justify-between"><span>{t.vat} ({p.deposit.vatPct}%)</span><span>{money(breakdown.vat)}</span></p> : null}
+                  </div>
+                </>
+              ) : (
+                <p className="flex justify-between gap-3"><span>{selectedType && p.bookingTypes.length > 1 ? `${selectedType.name[locale] || selectedType.name.en} · ` : ""}{p.deposit.type === "full_prepayment" ? t.payAmountPrepayment : t.payAmountDeposit}</span><span className="font-medium">{money(depositAmount)}</span></p>
+              )}
+              <p className="mt-2 flex justify-between border-t pt-2 text-base font-semibold"><span>{t.total}</span><span>{money(depositAmount)}</span></p>
+              {paysOnline ? <p className="mt-2 text-xs text-slate-600">{t.chargeNote.replace("{amount}", money(depositAmount))}</p> : null}
+            </section>
+          ) : null}
+          {p.termsText[locale] || p.termsText.en ? (
+            <section className="rounded-xl border p-3 text-xs text-slate-600">
+              <p className="mb-1 text-sm font-semibold text-slate-800">{t.importantInfo}</p>
+              <p className="whitespace-pre-line">{p.termsText[locale] || p.termsText.en}</p>
+            </section>
+          ) : null}
+          <section className="space-y-2 rounded-xl border p-3 text-xs text-slate-600">
+            <p className="text-sm font-semibold text-slate-800">{t.cancellationTitle}</p>
+            {p.policyText[locale] || p.policyText.en ? <p className="whitespace-pre-line">{p.policyText[locale] || p.policyText.en}</p> : null}
+            <p>{t.agreeAll}</p>
+            <label className="flex items-start gap-2 pt-1 text-sm text-slate-800"><input type="checkbox" className="mt-1" required checked={form.accept_policy} onChange={(e) => setForm({ ...form, accept_policy: e.target.checked })} /> <span>{t.agreeCancellation} <Req t={t} /></span></label>
+          </section>
+          <section className="space-y-3 rounded-xl border p-3 text-sm">
+            <p className="font-semibold text-slate-800">{t.privacyTitle}</p>
+            <label className="flex items-start gap-2 text-slate-800"><input type="checkbox" className="mt-1" required checked={form.accept_privacy_notice} onChange={(e) => setForm({ ...form, accept_privacy_notice: e.target.checked })} /> <span>{t.privacyAck} <a href={`/privacy?lang=${locale}`} target="_blank" rel="noopener" className="font-medium text-brand-700 underline">{t.privacyLink}</a> <Req t={t} /></span></label>
+            <div className="space-y-2 border-t pt-3">
+              <label className="flex items-start gap-2 text-slate-800"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> <span>{t.marketingVenue.replace("{name}", p.name)} <span className="text-xs text-muted">({t.optional})</span></span></label>
+              {form.marketing_consent ? (
+                <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-6 text-sm">
+                  <legend className="sr-only">{t.marketingChannels}</legend>
+                  <span className="text-xs text-muted">{t.marketingChannels}:</span>
+                  {(["email", "sms", "line"] as const).map((ch) => (
+                    <label key={ch} className="flex items-center gap-1.5"><input type="checkbox" checked={form.marketing_channels.includes(ch)} onChange={(e) => setForm({ ...form, marketing_channels: e.target.checked ? [...form.marketing_channels, ch] : form.marketing_channels.filter((c) => c !== ch) })} /> {ch === "email" ? t.channelEmail : ch.toUpperCase()}</label>
+                  ))}
+                </fieldset>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted">{t.contractNote}</p>
+          </section>
+          {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
+          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy || !form.accept_privacy_notice}>{submitting ? t.confirming : paysOnline ? t.payAmountBtn.replace("{amount}", money(depositAmount)) : t.confirm}</Button>
+          </form>
+          )}
+        </div>
       )}
       {!p.embed ? <div className="mt-8 flex flex-col items-center gap-1"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-5 w-auto opacity-80" /><p className="text-[11px] text-muted">T23 Reservation Hub</p></div> : null}
     </div>
   );
+}
+
+function Req({ t }: { t: { required: string } }) {
+  return <span className="ml-1 rounded bg-red-50 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-red-700">{t.required}</span>;
 }
