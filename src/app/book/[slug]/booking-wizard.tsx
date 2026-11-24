@@ -234,7 +234,7 @@ export function BookingWizard(p: Props) {
           <div className="rounded-xl bg-brand-50 p-3 text-sm">
             <div className="flex items-start justify-between gap-2">
               <p className="font-semibold text-brand-800">{t.summary}</p>
-              {step === 3 ? <button type="button" onClick={() => setStep(1)} className="text-xs font-medium text-brand-700 underline">{t.edit}</button> : null}
+              <button type="button" onClick={() => setStep(1)} className="shrink-0 rounded-full bg-brand-700 px-3 py-1 text-xs font-semibold text-white hover:bg-brand-800">{t.changeDateTime}</button>
             </div>
             <p>{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {time} · {party} {party === 1 ? t.guest : t.guestsPlural}</p>
             {selectedType && p.bookingTypes.length > 1 ? <p>{selectedType.name[locale] || selectedType.name.en}</p> : null}
@@ -258,7 +258,7 @@ export function BookingWizard(p: Props) {
           </Field>
           <fieldset className="space-y-2 rounded-xl border p-3" aria-describedby="dietary-q">
             <p id="dietary-q" className="text-sm font-medium text-slate-800">{t.dietaryQuestion} {p.dietaryRequired ? <Req t={t} /> : null}</p>
-            <p className="text-xs text-muted">{t.dietaryNone}</p>
+            <p className="text-xs text-muted">{p.dietaryRequired ? t.dietaryRequiredHint : t.dietaryNone}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label={t.dietary}><Input value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} /></Field>
               <Field label={t.allergies}><Input value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} /></Field>
@@ -283,7 +283,7 @@ export function BookingWizard(p: Props) {
           <section className="rounded-xl border p-3 text-sm">
             <div className="mb-2 flex items-start justify-between gap-2">
               <p className="font-semibold text-slate-800">{t.reservationDetails}</p>
-              <button type="button" onClick={() => setStep(1)} className="rounded-md border px-2 py-0.5 text-xs font-medium text-slate-700">{t.edit}</button>
+              <button type="button" onClick={() => setStep(1)} className="rounded-md border px-2 py-0.5 text-xs font-medium text-slate-700">{t.changeDateTime}</button>
             </div>
             <ul className="grid gap-1.5 text-slate-700 sm:grid-cols-2">
               <li className="flex items-center gap-2"><Store className="size-4 text-muted" /> {p.name}</li>
