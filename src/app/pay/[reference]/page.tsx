@@ -78,6 +78,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
               <span>{pol?.deposit_type === "full_prepayment" ? t.payAmountPrepayment : t.payAmountDeposit}</span>
               <span className="text-xl font-semibold text-accent-700">{formatMoney(Number(r.deposit_amount), currency)}</span>
             </p>
+            <p className="mt-1 text-xs text-slate-600">{t.fxNote}</p>
           </div>
           {testMode ? <p className="rounded-lg bg-amber-50 p-2 text-center text-xs font-medium text-amber-800">{t.payTestMode}</p> : null}
           </div>

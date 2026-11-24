@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeDeposit } from "@/lib/domain/deposit";
+import { computeDeposit, prepaymentBreakdown } from "@/lib/domain/deposit";
 
 describe("computeDeposit", () => {
   const perPerson = { type: "per_person", amount: 500, minParty: 1 };
@@ -20,5 +20,11 @@ describe("computeDeposit", () => {
     const prepay = { type: "full_prepayment", amount: 3000, minParty: 1 };
     expect(computeDeposit(prepay, 2, null, 2590)).toBe(5180);
     expect(computeDeposit(prepay, 2, null, null)).toBe(3000);
+  });
+  it("adds service charge then VAT to a prepaid course", () => {
+    const prepay = { type: "full_prepayment", amount: 0, minParty: 1, serviceChargePct: 10, vatPct: 7 };
+    expect(prepaymentBreakdown(prepay, 2, null, 2500)).toEqual({ subtotal: 5000, serviceCharge: 500, vat: 385, total: 5885 });
+    expect(computeDeposit(prepay, 2, null, 2500)).toBe(5885);
+    expect(prepaymentBreakdown({ ...prepay, type: "per_person" }, 2, null, 2500)).toBeNull();
   });
 });

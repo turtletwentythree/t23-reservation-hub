@@ -139,7 +139,7 @@ export async function getAvailability(
 }
 
 export function depositRule(policy: Database["public"]["Tables"]["booking_policies"]["Row"] | null): DepositRule | null {
-  return policy ? { type: policy.deposit_type, amount: Number(policy.deposit_amount), minParty: policy.deposit_min_party_size } : null;
+  return policy ? { type: policy.deposit_type, amount: Number(policy.deposit_amount), minParty: policy.deposit_min_party_size, serviceChargePct: Number(policy.service_charge_percent ?? 0), vatPct: Number(policy.vat_percent ?? 0) } : null;
 }
 
 export function depositFor(policy: Database["public"]["Tables"]["booking_policies"]["Row"] | null, partySize: number, bookingTypeDeposit?: number | null, bookingTypePrice?: number | null) {

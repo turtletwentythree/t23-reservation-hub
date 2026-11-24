@@ -109,6 +109,9 @@ export const policySchema = z.object({
   deposit_min_party_size: z.coerce.number().int().min(1).max(200),
   no_show_fee_amount: z.coerce.number().min(0).max(1_000_000),
   payment_hold_minutes: z.coerce.number().int().min(5).max(1440).default(15),
+  service_charge_percent: z.coerce.number().min(0).max(30).default(0),
+  vat_percent: z.coerce.number().min(0).max(30).default(0),
+  dietary_question_required: bool(false),
   duration_rules: z
     .array(z.object({ max_party: z.coerce.number().int().min(1).max(200), minutes: z.coerce.number().int().min(15).max(600) }))
     .max(10)
@@ -117,6 +120,10 @@ export const policySchema = z.object({
   cancellation_policy_th: optText(2000),
   cancellation_policy_ja: optText(2000),
   cancellation_policy_fr: optText(2000),
+  booking_terms_en: optText(4000),
+  booking_terms_th: optText(4000),
+  booking_terms_ja: optText(4000),
+  booking_terms_fr: optText(4000),
 }).refine((v) => v.max_party_size >= v.min_party_size, { message: "Max party size must be ≥ min", path: ["max_party_size"] });
 
 export const tableSchema = z.object({

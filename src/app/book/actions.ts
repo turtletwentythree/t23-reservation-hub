@@ -56,6 +56,9 @@ export async function publicBookAction(raw: unknown): Promise<ActionResult<{ red
     const admin = createAdminClient();
     const config = await loadRestaurantConfig(admin, r.id);
     const policy = config.policyRow;
+    if (policy?.dietary_question_required && !input.dietary_requirements?.trim() && !input.allergies?.trim()) {
+      throw new DomainError("validation", "Please tell us about any dietary requirements or allergies (write \"none\" if there are none).");
+    }
 
     let duration = durationForParty(config.policy, input.party_size);
     let typeDeposit: number | null = null;
