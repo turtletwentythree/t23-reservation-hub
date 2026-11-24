@@ -62,9 +62,9 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   return (
     <div className="min-h-dvh bg-gradient-to-b from-brand-50 to-white px-4 py-6 md:px-6 md:py-10">
       <div className="mx-auto w-full max-w-lg space-y-4 md:max-w-4xl">
-        <ol className="flex gap-2 text-xs font-medium md:max-w-xl">
-          {[t.stepWhen, t.stepDetails, t.stepPay].map((s, i) => (
-            <li key={s} className={`flex-1 rounded-full px-3 py-1.5 text-center ${i === 2 ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800"}`}>{i + 1}. {s}</li>
+        <ol className="flex gap-1.5 text-[11px] font-medium sm:gap-2 sm:text-xs md:max-w-xl">
+          {[t.stepWhen, t.stepDetails, t.stepReview, t.stepPay].map((s, i) => (
+            <li key={s} className={`flex-1 rounded-full px-3 py-1.5 text-center ${i === 3 ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800"}`}>{i + 1}. {s}</li>
           ))}
         </ol>
         <div className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-2 md:gap-8 md:p-6">

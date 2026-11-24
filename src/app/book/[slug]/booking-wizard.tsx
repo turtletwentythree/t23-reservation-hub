@@ -134,8 +134,8 @@ export function BookingWizard(p: Props) {
         </div>
       </div>
 
-      <ol className="mb-3 flex gap-2 text-xs font-medium" aria-label="Steps">
-        {[t.stepWhen, t.stepDetails, ...(paysOnline ? [t.stepPay] : [])].map((label, i) => (
+      <ol className="mb-3 flex gap-1.5 text-[11px] font-medium sm:gap-2 sm:text-xs" aria-label="Steps">
+        {[t.stepWhen, t.stepDetails, t.stepReview, ...(paysOnline ? [t.stepPay] : [])].map((label, i) => (
           <li key={label} className={cn("flex-1 rounded-full px-3 py-1.5 text-center", i + 1 === step ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800")}>{i + 1}. {label}</li>
         ))}
       </ol>
@@ -221,18 +221,22 @@ export function BookingWizard(p: Props) {
           </div>
         </div>
       ) : (
-        <form onSubmit={submit} className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8 md:p-6">
+        <div className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8 md:p-6">
           <div className="min-w-0 space-y-4 md:sticky md:top-6 md:self-start">
-          <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-muted"><ChevronLeft className="size-4" /> {t.back}</button>
+          <button type="button" onClick={() => setStep(step === 3 ? 2 : 1)} className="flex items-center gap-1 text-sm text-muted"><ChevronLeft className="size-4" /> {t.back}</button>
           <div className="rounded-xl bg-brand-50 p-3 text-sm">
-            <p className="font-semibold text-brand-800">{t.summary}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-semibold text-brand-800">{t.summary}</p>
+              {step === 3 ? <button type="button" onClick={() => setStep(1)} className="text-xs font-medium text-brand-700 underline">{t.edit}</button> : null}
+            </div>
             <p>{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {time} · {party} {party === 1 ? t.guest : t.guestsPlural}</p>
             {selectedType && p.bookingTypes.length > 1 ? <p>{selectedType.name[locale] || selectedType.name.en}</p> : null}
             {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{p.deposit.type === "full_prepayment" ? t.payAmountPrepayment : t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
             {paysOnline ? <p className="mt-1 text-xs text-slate-600">{t.payHoldNote.replace("{n}", String(p.paymentHoldMinutes))}</p> : null}
           </div>
           </div>
-          <div className="min-w-0 space-y-4 md:border-l md:pl-8">
+          {step === 2 ? (
+          <form onSubmit={(e) => { e.preventDefault(); setError(null); setStep(3); window.scrollTo({ top: 0 }); }} className="min-w-0 space-y-4 md:border-l md:pl-8">
           <p className="text-sm font-semibold">{t.yourDetails}</p>
           <Field label={t.fullName}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -246,17 +250,38 @@ export function BookingWizard(p: Props) {
           </div>
           <Field label={t.requests}><Textarea rows={2} maxLength={1000} value={form.guest_notes} onChange={(e) => setForm({ ...form, guest_notes: e.target.value })} /></Field>
           <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} aria-hidden />
-          <div className="rounded-xl border p-3 text-xs text-slate-600">
-            <p className="mb-1 font-semibold text-slate-800">{t.policy}</p>
-            <p>{p.policyText[locale] || p.policyText.en}</p>
-            {p.termsText[locale] || p.termsText.en ? <p className="mt-1">{p.termsText[locale] || p.termsText.en}</p> : null}
-          </div>
+          <Button size="lg" className="w-full">{t.reviewNext}</Button>
+          </form>
+          ) : (
+          <form onSubmit={submit} className="min-w-0 space-y-4 md:border-l md:pl-8">
+          <p className="text-base font-semibold">{t.reviewTitle}</p>
+          <section className="rounded-xl border p-3 text-sm">
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <p className="font-semibold text-slate-800">{t.guestLabel}</p>
+              <button type="button" onClick={() => setStep(2)} className="text-xs font-medium text-brand-700 underline">{t.edit}</button>
+            </div>
+            <p>{form.customer_name}</p>
+            <p className="text-slate-600">{form.phone} · {form.email}</p>
+            {[form.special_occasion && `${t.occasion}: ${form.special_occasion}`, form.dietary_requirements && `${t.dietary}: ${form.dietary_requirements}`, form.allergies && `${t.allergies}: ${form.allergies}`, form.guest_notes && `${t.notesLabel}: ${form.guest_notes}`].filter(Boolean).map((line) => <p key={line as string} className="text-slate-600">{line}</p>)}
+          </section>
+          {p.termsText[locale] || p.termsText.en ? (
+            <section className="rounded-xl border p-3 text-xs text-slate-600">
+              <p className="mb-1 text-sm font-semibold text-slate-800">{t.importantInfo}</p>
+              <p className="whitespace-pre-line">{p.termsText[locale] || p.termsText.en}</p>
+            </section>
+          ) : null}
+          <section className="rounded-xl border p-3 text-xs text-slate-600">
+            <p className="mb-1 text-sm font-semibold text-slate-800">{t.payTerms}</p>
+            <p className="mb-1 flex justify-between gap-2 text-sm text-slate-800"><span>{t.dueNow}</span><span className="font-semibold">{depositAmount > 0 ? formatMoney(depositAmount, p.currency) : t.dueNowNone}</span></p>
+            <p className="whitespace-pre-line">{p.policyText[locale] || p.policyText.en}</p>
+          </section>
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" required checked={form.accept_policy} onChange={(e) => setForm({ ...form, accept_policy: e.target.checked })} /> {t.acceptPolicy}</label>
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> {t.marketing}</label>
           {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
-          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : paysOnline ? t.continueToPayment : t.confirm}</Button>
-          </div>
-        </form>
+          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : paysOnline ? t.confirmAndContinue : t.confirm}</Button>
+          </form>
+          )}
+        </div>
       )}
       {!p.embed ? <div className="mt-8 flex flex-col items-center gap-1"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-5 w-auto opacity-80" /><p className="text-[11px] text-muted">T23 Reservation Hub</p></div> : null}
     </div>

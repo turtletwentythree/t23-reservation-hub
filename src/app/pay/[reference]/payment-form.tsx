@@ -130,7 +130,7 @@ export function PaymentForm(p: Props) {
     <div className="space-y-4">
       {p.methods.includes("card") && p.omisePublicKey ? <Script src="https://cdn.omise.co/omise.js" strategy="afterInteractive" /> : null}
       <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-center text-sm">
-        {t.payHold} <span className="font-semibold tabular-nums">{mins}:{String(secs).padStart(2, "0")}</span>
+        {t.payHold} <span className="font-semibold tabular-nums" suppressHydrationWarning>{mins}:{String(secs).padStart(2, "0")}</span>
       </p>
 
       {p.methods.length > 1 ? (
