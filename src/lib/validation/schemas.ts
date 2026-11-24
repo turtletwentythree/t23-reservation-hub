@@ -66,7 +66,13 @@ export const publicBookingSchema = z.object({
   allergies: optText(500),
   guest_notes: optText(1000),
   accept_policy: z.literal(true, { message: "Please accept the booking policy" }),
+  accept_privacy_notice: z.literal(true, { message: "Please acknowledge the privacy notice" }),
+  /** Explicit consent (PDPA s.26) to use the allergy / dietary details, which can be health data. */
+  health_data_consent: bool(false),
+  /** The guest says they have no dietary needs, or will tell staff in person. */
+  dietary_none: bool(false),
   marketing_consent: bool(false),
+  marketing_channels: z.array(z.enum(["email", "sms", "line"])).max(3).default([]),
   // honeypot: real users never fill this
   website: z.string().max(0).optional().or(z.literal("")),
 });

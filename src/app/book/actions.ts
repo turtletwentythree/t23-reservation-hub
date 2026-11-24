@@ -1,4 +1,5 @@
 "use server";
+import { PRIVACY_NOTICE_VERSION } from "@/lib/privacy-notice";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
@@ -56,8 +57,15 @@ export async function publicBookAction(raw: unknown): Promise<ActionResult<{ red
     const admin = createAdminClient();
     const config = await loadRestaurantConfig(admin, r.id);
     const policy = config.policyRow;
-    if (policy?.dietary_question_required && !input.dietary_requirements?.trim() && !input.allergies?.trim()) {
-      throw new DomainError("validation", "Please tell us about any dietary requirements or allergies (write \"none\" if there are none).");
+    const hasDietary = Boolean(input.dietary_requirements?.trim() || input.allergies?.trim());
+    if (hasDietary && !input.health_data_consent) {
+      throw new DomainError("validation", "Please consent to us using your dietary / allergy details, or leave them blank and tell our staff at the restaurant.");
+    }
+    if (policy?.dietary_question_required && !hasDietary && !input.dietary_none) {
+      throw new DomainError("validation", "Please answer the dietary requirements / allergies question.");
+    }
+    if (input.marketing_consent && input.marketing_channels.length === 0) {
+      throw new DomainError("validation", "Please choose at least one channel for offers, or untick the marketing box.");
     }
 
     let duration = durationForParty(config.policy, input.party_size);
@@ -111,12 +119,15 @@ export async function publicBookAction(raw: unknown): Promise<ActionResult<{ red
       "online",
     );
 
-    // PDPA consent ledger
+    // PDPA ledger (append-only). The booking itself runs on the contract basis, so we record
+    // the notice acknowledgement rather than a blanket "data processing" consent. Marketing is
+    // only recorded when granted: leaving the box unticked is not a withdrawal of an earlier grant.
     if (res.customer_id) {
-      await admin.from("customer_consents").insert([
-        { customer_id: res.customer_id, consent_type: "data_processing", granted: true, source: "online_booking" },
-        { customer_id: res.customer_id, consent_type: "marketing_email", granted: input.marketing_consent, source: "online_booking" },
-      ]);
+      const base = { customer_id: res.customer_id, source: "online_booking" as const, policy_version: PRIVACY_NOTICE_VERSION };
+      const rows = [{ ...base, consent_type: "privacy_notice", granted: true }];
+      if (hasDietary) rows.push({ ...base, consent_type: "health_data", granted: true });
+      if (input.marketing_consent) for (const ch of input.marketing_channels) rows.push({ ...base, consent_type: `marketing_${ch}`, granted: true });
+      await admin.from("customer_consents").insert(rows);
     }
 
     const token = manageToken(res.id);

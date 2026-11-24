@@ -93,7 +93,8 @@ export function BookingWizard(p: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, startLoad] = useTransition();
   const [submitting, startSubmit] = useTransition();
-  const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, marketing_consent: false, website: "" });
+  const [form, setForm] = useState({ customer_name: "", phone: "", email: "", special_occasion: "", dietary_requirements: "", allergies: "", guest_notes: "", accept_policy: false, accept_privacy_notice: false, health_data_consent: false, dietary_none: false, marketing_consent: false, marketing_channels: ["email"] as ("email" | "sms" | "line")[], website: "" });
+  const hasDietary = Boolean(form.dietary_requirements.trim() || form.allergies.trim());
 
   const selectedType = p.bookingTypes.find((b) => b.id === typeId);
   const depositAmount = computeDeposit(p.deposit, party, selectedType?.deposit_override, selectedType?.price);
@@ -115,8 +116,9 @@ export function BookingWizard(p: Props) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (form.marketing_consent && form.marketing_channels.length === 0) { setError(t.channelMissing); return; }
     startSubmit(async () => {
-      const res = await publicBookAction({ ...form, restaurant_slug: p.slug, reservation_date: date, reservation_time: time, party_size: party, booking_type_id: typeId || undefined, language: locale });
+      const res = await publicBookAction({ ...form, health_data_consent: hasDietary && form.health_data_consent, dietary_none: !hasDietary && form.dietary_none, marketing_channels: form.marketing_consent ? form.marketing_channels : [], restaurant_slug: p.slug, reservation_date: date, reservation_time: time, party_size: party, booking_type_id: typeId || undefined, language: locale });
       if (!res.ok) { setError(res.error); return; }
       window.location.href = res.data.redirect;
     });
@@ -241,7 +243,7 @@ export function BookingWizard(p: Props) {
           </div>
           </div>
           {step === 2 ? (
-          <form onSubmit={(e) => { e.preventDefault(); if (p.dietaryRequired && !form.dietary_requirements.trim() && !form.allergies.trim()) { setError(t.dietaryMissing); return; } setError(null); setStep(3); window.scrollTo({ top: 0 }); }} className="min-w-0 space-y-4 md:border-l md:pl-8">
+          <form onSubmit={(e) => { e.preventDefault(); if (hasDietary && !form.health_data_consent) { setError(t.healthMissing); return; } if (p.dietaryRequired && !hasDietary && !form.dietary_none) { setError(t.dietaryMissing); return; } setError(null); setStep(3); window.scrollTo({ top: 0 }); }} className="min-w-0 space-y-4 md:border-l md:pl-8">
           <p className="text-sm font-semibold">{t.yourDetails}</p>
           <Field label={<>{t.fullName} <Req t={t} /></>}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -256,11 +258,19 @@ export function BookingWizard(p: Props) {
           </Field>
           <fieldset className="space-y-2 rounded-xl border p-3" aria-describedby="dietary-q">
             <p id="dietary-q" className="text-sm font-medium text-slate-800">{t.dietaryQuestion} {p.dietaryRequired ? <Req t={t} /> : null}</p>
-            {p.dietaryRequired ? <p className="text-xs text-muted">{t.dietaryNone}</p> : null}
+            <p className="text-xs text-muted">{t.dietaryNone}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label={t.dietary}><Input value={form.dietary_requirements} onChange={(e) => setForm({ ...form, dietary_requirements: e.target.value })} /></Field>
               <Field label={t.allergies}><Input value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} /></Field>
             </div>
+            {hasDietary ? (
+              <div className="space-y-1 rounded-lg bg-slate-50 p-2.5">
+                <label className="flex items-start gap-2 text-sm text-slate-800"><input type="checkbox" className="mt-1" required checked={form.health_data_consent} onChange={(e) => setForm({ ...form, health_data_consent: e.target.checked })} /> <span>{t.healthConsent} <Req t={t} /></span></label>
+                <p className="pl-6 text-xs text-muted">{t.healthConsentHint}</p>
+              </div>
+            ) : p.dietaryRequired ? (
+              <label className="flex items-start gap-2 text-sm text-slate-800"><input type="checkbox" className="mt-1" checked={form.dietary_none} onChange={(e) => setForm({ ...form, dietary_none: e.target.checked })} /> {t.dietaryNoneBox}</label>
+            ) : null}
           </fieldset>
           <Field label={t.requests}><Textarea rows={2} maxLength={1000} value={form.guest_notes} onChange={(e) => setForm({ ...form, guest_notes: e.target.value })} /></Field>
           <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} aria-hidden />
@@ -322,9 +332,25 @@ export function BookingWizard(p: Props) {
             <p>{t.agreeAll}</p>
             <label className="flex items-start gap-2 pt-1 text-sm text-slate-800"><input type="checkbox" className="mt-1" required checked={form.accept_policy} onChange={(e) => setForm({ ...form, accept_policy: e.target.checked })} /> <span>{t.agreeCancellation} <Req t={t} /></span></label>
           </section>
-          <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> {t.marketingVenue.replace("{name}", p.name)}</label>
+          <section className="space-y-3 rounded-xl border p-3 text-sm">
+            <p className="font-semibold text-slate-800">{t.privacyTitle}</p>
+            <label className="flex items-start gap-2 text-slate-800"><input type="checkbox" className="mt-1" required checked={form.accept_privacy_notice} onChange={(e) => setForm({ ...form, accept_privacy_notice: e.target.checked })} /> <span>{t.privacyAck} <a href={`/privacy?lang=${locale}`} target="_blank" rel="noopener" className="font-medium text-brand-700 underline">{t.privacyLink}</a> <Req t={t} /></span></label>
+            <div className="space-y-2 border-t pt-3">
+              <label className="flex items-start gap-2 text-slate-800"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> <span>{t.marketingVenue.replace("{name}", p.name)} <span className="text-xs text-muted">({t.optional})</span></span></label>
+              {form.marketing_consent ? (
+                <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 pl-6 text-sm">
+                  <legend className="sr-only">{t.marketingChannels}</legend>
+                  <span className="text-xs text-muted">{t.marketingChannels}:</span>
+                  {(["email", "sms", "line"] as const).map((ch) => (
+                    <label key={ch} className="flex items-center gap-1.5"><input type="checkbox" checked={form.marketing_channels.includes(ch)} onChange={(e) => setForm({ ...form, marketing_channels: e.target.checked ? [...form.marketing_channels, ch] : form.marketing_channels.filter((c) => c !== ch) })} /> {ch === "email" ? t.channelEmail : ch.toUpperCase()}</label>
+                  ))}
+                </fieldset>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted">{t.contractNote}</p>
+          </section>
           {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
-          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : paysOnline ? t.payAmountBtn.replace("{amount}", money(depositAmount)) : t.confirm}</Button>
+          <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy || !form.accept_privacy_notice}>{submitting ? t.confirming : paysOnline ? t.payAmountBtn.replace("{amount}", money(depositAmount)) : t.confirm}</Button>
           </form>
           )}
         </div>
