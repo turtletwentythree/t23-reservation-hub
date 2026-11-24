@@ -118,7 +118,7 @@ export function BookingWizard(p: Props) {
   };
 
   return (
-    <div className={cn("mx-auto w-full max-w-lg", p.embed ? "p-3" : "px-4 py-6")}>
+    <div className={cn("mx-auto w-full max-w-lg md:max-w-4xl", p.embed ? "p-3" : "px-4 py-6 md:px-6 md:py-10")}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-600">{t.bookTable}</p>
@@ -140,7 +140,8 @@ export function BookingWizard(p: Props) {
         ))}
       </ol>
       {step === 1 ? (
-        <div className="space-y-5 rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="grid gap-5 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-2 md:gap-8 md:p-6">
+          <div className="min-w-0 space-y-5">
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-medium"><Users className="size-4 text-brand-600" /> {t.guests}</p>
             <div className="flex items-center gap-3">
@@ -189,6 +190,8 @@ export function BookingWizard(p: Props) {
             <MonthCalendar value={date} onChange={setDate} min={p.today} max={p.maxDate} fmt={fmtDate} />
             <p className="mt-2 text-sm text-muted">{fmtDate(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </section>
+          </div>
+          <div className="min-w-0 space-y-5 md:border-l md:pl-8">
           {p.bookingTypes.length > 1 ? (
             <section>
               <p className="mb-2 text-sm font-medium">{t.bookingType}</p>
@@ -207,7 +210,7 @@ export function BookingWizard(p: Props) {
             {loading ? <p className="text-sm text-muted">{t.loading}</p> : times && times.length === 0 ? (
               <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{reason === "closed" ? t.closed : reason === "fully_booked" ? t.fullyBooked : error ?? t.noTimes}</p>
             ) : (
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5">
                 {(times ?? []).map((x) => (
                   <button key={x} type="button" onClick={() => setTime(x)} className={cn("rounded-xl border py-2.5 text-sm font-medium tabular-nums", time === x ? "border-accent-500 bg-accent-500 text-white" : "bg-white hover:border-accent-300")}>{x}</button>
                 ))}
@@ -215,9 +218,11 @@ export function BookingWizard(p: Props) {
             )}
           </section>
           <Button size="lg" className="w-full" disabled={!time} onClick={() => setStep(2)}>{t.next}</Button>
+          </div>
         </div>
       ) : (
-        <form onSubmit={submit} className="space-y-4 rounded-2xl border bg-white p-4 shadow-sm">
+        <form onSubmit={submit} className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8 md:p-6">
+          <div className="min-w-0 space-y-4 md:sticky md:top-6 md:self-start">
           <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1 text-sm text-muted"><ChevronLeft className="size-4" /> {t.back}</button>
           <div className="rounded-xl bg-brand-50 p-3 text-sm">
             <p className="font-semibold text-brand-800">{t.summary}</p>
@@ -226,6 +231,8 @@ export function BookingWizard(p: Props) {
             {depositAmount > 0 ? <p className="mt-1 font-medium text-accent-700">{p.deposit.type === "full_prepayment" ? t.payAmountPrepayment : t.deposit}: {formatMoney(depositAmount, p.currency)}</p> : null}
             {paysOnline ? <p className="mt-1 text-xs text-slate-600">{t.payHoldNote.replace("{n}", String(p.paymentHoldMinutes))}</p> : null}
           </div>
+          </div>
+          <div className="min-w-0 space-y-4 md:border-l md:pl-8">
           <p className="text-sm font-semibold">{t.yourDetails}</p>
           <Field label={t.fullName}><Input required minLength={2} maxLength={120} autoComplete="name" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -248,6 +255,7 @@ export function BookingWizard(p: Props) {
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.marketing_consent} onChange={(e) => setForm({ ...form, marketing_consent: e.target.checked })} /> {t.marketing}</label>
           {error ? <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p> : null}
           <Button size="lg" variant="accent" className="w-full" disabled={submitting || !form.accept_policy}>{submitting ? t.confirming : paysOnline ? t.continueToPayment : t.confirm}</Button>
+          </div>
         </form>
       )}
       {!p.embed ? <div className="mt-8 flex flex-col items-center gap-1"><Image src="/turtle23-logo.png" width={956} height={114} alt="Turtle 23 Company Limited" className="h-5 w-auto opacity-80" /><p className="text-[11px] text-muted">T23 Reservation Hub</p></div> : null}

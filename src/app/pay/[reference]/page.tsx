@@ -60,14 +60,15 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   const testMode = gateway.name === "simulator" || (process.env.OMISE_SECRET_KEY ?? "").startsWith("skey_test_") || (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_");
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-brand-50 to-white px-4 py-6">
-      <div className="mx-auto w-full max-w-lg space-y-4">
-        <ol className="flex gap-2 text-xs font-medium">
+    <div className="min-h-dvh bg-gradient-to-b from-brand-50 to-white px-4 py-6 md:px-6 md:py-10">
+      <div className="mx-auto w-full max-w-lg space-y-4 md:max-w-4xl">
+        <ol className="flex gap-2 text-xs font-medium md:max-w-xl">
           {[t.stepWhen, t.stepDetails, t.stepPay].map((s, i) => (
             <li key={s} className={`flex-1 rounded-full px-3 py-1.5 text-center ${i === 2 ? "bg-brand-500 text-white" : "bg-brand-100 text-brand-800"}`}>{i + 1}. {s}</li>
           ))}
         </ol>
-        <div className="space-y-4 rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-2 md:gap-8 md:p-6">
+          <div className="min-w-0 space-y-4 md:sticky md:top-6 md:self-start">
           <h1 className="text-lg font-semibold">{t.payTitle}</h1>
           <div className="rounded-xl bg-brand-50 p-3 text-sm">
             <p className="font-semibold text-brand-800">{r.restaurants?.name}</p>
@@ -79,6 +80,8 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             </p>
           </div>
           {testMode ? <p className="rounded-lg bg-amber-50 p-2 text-center text-xs font-medium text-amber-800">{t.payTestMode}</p> : null}
+          </div>
+          <div className="min-w-0 space-y-4 md:border-l md:pl-8">
           <PaymentForm
             reference={r.reference}
             token={sp.t!}
@@ -90,6 +93,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             lastFailed={r.payment_status === "failed"}
           />
           <p className="text-center text-[11px] text-muted">{t.paySecure}</p>
+          </div>
         </div>
       </div>
     </div>
